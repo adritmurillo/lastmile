@@ -17,4 +17,5 @@ public interface CourierDomainMapper {
     List<CourierDto> toDtoList(List<Courier> couriers);
     VehicleDto toVehicleDto(Vehicle vehicle);
     Vehicle toVehicleDomain(VehicleDto dto);
+    List<VehicleDto> toVehicleDtoList(List<Vehicle> vehicles);
 }

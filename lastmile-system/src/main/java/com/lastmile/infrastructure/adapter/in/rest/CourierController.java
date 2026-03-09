@@ -106,4 +106,44 @@ public class CourierController {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.ok(courierRestMapper.toVehicleResponse(saved)));
     }
+
+    @GetMapping
+    @Operation(summary = "Get all couriers")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
+    public ResponseEntity<ApiResponse<List<CourierResponse>>> getAllCouriers() {
+        List<CourierDto> couriers = courierDomainMapper.toDtoList(
+                manageCouriersUseCase.getAllCouriers());
+        return ResponseEntity.ok(ApiResponse.ok(courierRestMapper.toResponseList(couriers)));
+    }
+
+    @PutMapping("/{id}")
+    @Operation(summary = "Update courier")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
+    public ResponseEntity<ApiResponse<CourierResponse>> updateCourier(
+            @PathVariable UUID id,
+            @Valid @RequestBody RegisterCourierRequest request) {
+
+        CourierDto dto = CourierDto.builder()
+                .id(id)
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .documentNumber(request.getDocumentNumber())
+                .phone(request.getPhone())
+                .build();
+
+        CourierDto saved = courierDomainMapper.toDto(
+                manageCouriersUseCase.updateCourier(
+                        courierDomainMapper.toDomain(dto)));
+
+        return ResponseEntity.ok(ApiResponse.ok(courierRestMapper.toResponse(saved)));
+    }
+
+    @GetMapping("/vehicles")
+    @Operation(summary = "Get all vehicles")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
+    public ResponseEntity<ApiResponse<List<VehicleResponse>>> getAllVehicles() {
+        List<VehicleDto> vehicles = courierDomainMapper.toVehicleDtoList(
+                manageCouriersUseCase.getAllVehicles());
+        return ResponseEntity.ok(ApiResponse.ok(courierRestMapper.toVehicleResponseList(vehicles)));
+    }
 }

@@ -29,4 +29,7 @@ public interface CourierRestMapper {
     VehicleDto toVehicleDto(RegisterVehicleRequest request);
 
     VehicleResponse toVehicleResponse(VehicleDto dto);
+
+    List<VehicleResponse> toVehicleResponseList(List<VehicleDto> dtos);
+
 }

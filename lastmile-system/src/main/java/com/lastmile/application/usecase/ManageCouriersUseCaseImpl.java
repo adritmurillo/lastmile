@@ -88,4 +88,30 @@ public class ManageCouriersUseCaseImpl implements ManageCouriersUseCase {
                 vehicle.getLicensePlate(), courier.getFullName());
         return courierRepository.save(updated);
     }
+
+    @Override
+    public List<Courier> getAllCouriers() {
+        return courierRepository.findAll();
+    }
+
+    @Override
+    @Transactional
+    public Courier updateCourier(Courier courier) {
+        Courier existing = courierRepository.findById(courier.getId())
+                .orElseThrow(() -> new CourierNotFoundException(courier.getId()));
+
+        Courier updated = existing
+                .withFirstName(courier.getFirstName())
+                .withLastName(courier.getLastName())
+                .withDocumentNumber(courier.getDocumentNumber())
+                .withPhone(courier.getPhone());
+
+        log.info("Updating courier: {}", updated.getFullName());
+        return courierRepository.save(updated);
+    }
+
+    @Override
+    public List<Vehicle> getAllVehicles() {
+        return vehicleRepository.findAll();
+    }
 }

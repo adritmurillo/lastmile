@@ -1,0 +1,19 @@
+import api from './axiosConfig'
+import type { ApiResponse, Order } from '../types';
+
+export const ordersApi = {
+  getOrders: async (params?: { status?: string; date?: string; priority?: string }) => {
+    const response = await api.get<ApiResponse<Order[]>>('/orders', { params })
+    return response.data
+  },
+
+  createOrder: async (order: Partial<Order>) => {
+    const response = await api.post<ApiResponse<Order>>('/orders', order)
+    return response.data
+  },
+
+  getOrderByTracking: async (trackingCode: string) => {
+    const response = await api.get<ApiResponse<Order>>(`/orders/tracking/${trackingCode}`)
+    return response.data
+  },
+}

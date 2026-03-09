@@ -7,6 +7,7 @@ import com.lastmile.infrastructure.adapter.out.persistence.repository.VehicleJpa
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -24,5 +25,13 @@ public class VehicleRepositoryImpl implements VehicleRepository {
     @Override
     public Optional<Vehicle> findById(UUID id) {
         return jpaRepository.findById(id).map(mapper::toDomain);
+    }
+
+    @Override
+    public List<Vehicle> findAll() {
+        return jpaRepository.findAll()
+                .stream()
+                .map(mapper :: toDomain)
+                .toList();
     }
 }
