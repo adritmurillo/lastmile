@@ -40,8 +40,10 @@ public class SecurityConfig {
                                 "/api/v1/orders/tracking/**",
                                 "/api/v1/webhook/**",
                                 "/tracking.html",
+                                "/swagger-ui.html",
                                 "/swagger-ui/**",
-                                "/api-docs/**"
+                                "/api-docs/**",
+                                "/webjars/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
