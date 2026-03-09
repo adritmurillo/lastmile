@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rastrear Pedido — Last Mile Delivery</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background: #f4f4f4; color: #333; }
+
+        .header {
+            background: #1a1a2e;
+            padding: 20px 24px;
+            text-align: center;
+        }
+        .header .brand { font-size: 11px; color: #a0a0b0; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 4px; }
+        .header h1 { font-size: 20px; color: #fff; font-weight: 700; }
+
+        .container { max-width: 600px; margin: 32px auto; padding: 0 16px 40px; }
+
+        .search-box {
+            background: #fff;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            margin-bottom: 24px;
+        }
+        .search-box label { font-size: 13px; color: #666; display: block; margin-bottom: 8px; }
+        .search-row { display: flex; gap: 8px; }
+        .search-row input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1.5px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: monospace;
+            text-transform: uppercase;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-row input:focus { border-color: #1a1a2e; }
+        .search-row button {
+            padding: 12px 20px;
+            background: #1a1a2e;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .search-row button:hover { background: #2d2d4e; }
+
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            overflow: hidden;
+            display: none;
+        }
+
+        .card-header {
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .card-header .tracking-code { font-size: 18px; font-weight: 700; font-family: monospace; letter-spacing: 1px; }
+        .card-header .badge {
+            margin-left: auto;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .card-body { padding: 0 24px 24px; }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        .info-item { background: #f8f9ff; border-radius: 6px; padding: 12px 14px; border: 1px solid #e8eaf6; }
+        .info-item .info-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .info-item .info-value { font-size: 13px; font-weight: 500; color: #333; }
+
+        .timeline-title { font-size: 12px; color: #999; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+        .timeline { list-style: none; }
+        .timeline li {
+            display: flex;
+            gap: 14px;
+            padding-bottom: 20px;
+            position: relative;
+        }
+        .timeline li:not(:last-child)::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 28px;
+            bottom: 0;
+            width: 2px;
+            background: #e0e0e0;
+        }
+        .timeline .dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+            z-index: 1;
+        }
+        .timeline .event-content .event-title { font-size: 14px; font-weight: 600; color: #333; }
+        .timeline .event-content .event-date { font-size: 12px; color: #999; margin-top: 2px; }
+        .timeline .event-content .event-detail { font-size: 12px; color: #666; margin-top: 4px; }
+
+        .error-msg {
+            background: #fff;
+            border-radius: 8px;
+            padding: 32px;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: none;
+        }
+        .error-msg .error-icon { font-size: 40px; margin-bottom: 12px; }
+        .error-msg p { color: #666; font-size: 14px; }
+
+        .loading {
+            text-align: center;
+            padding: 32px;
+            display: none;
+            color: #999;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div class="brand">Last Mile Delivery</div>
+    <h1>🏍 Rastrear Pedido</h1>
+</div>
+
+<div class="container">
+    <div class="search-box">
+        <label>Ingresa tu código de seguimiento</label>
+        <div class="search-row">
+            <input type="text" id="trackingInput" placeholder="PKG-2026-XXXXXXXX" />
+            <button onclick="buscar()">Buscar</button>
+        </div>
+    </div>
+
+    <div class="loading" id="loading">⏳ Buscando tu pedido...</div>
+    <div class="error-msg" id="errorMsg">
+        <div class="error-icon">📦</div>
+        <p id="errorText">No encontramos ningún pedido con ese código.</p>
+    </div>
+    <div class="card" id="resultCard"></div>
+</div>
+
+<script>
+    const STATUS_CONFIG = {
+        PENDING:    { label: 'Pendiente',    bg: '#f3f4f6', color: '#6b7280', icon: '📦' },
+        ASSIGNED:   { label: 'Asignado',     bg: '#eff6ff', color: '#3b82f6', icon: '✅' },
+        IN_TRANSIT: { label: 'En camino',    bg: '#eff6ff', color: '#0284c7', icon: '🚴' },
+        DELIVERED:  { label: 'Entregado',    bg: '#f0fdf4', color: '#16a34a', icon: '🎉' },
+        FAILED:     { label: 'Fallido',      bg: '#fffbeb', color: '#d97706', icon: '⚠️' },
+        CANCELLED:  { label: 'Cancelado',    bg: '#fef2f2', color: '#dc2626', icon: '❌' },
+    };
+
+    const PRIORITY_CONFIG = {
+        EXPRESS:  { label: 'Express 🚀', color: '#f59e0b' },
+        STANDARD: { label: 'Standard',   color: '#22c55e' },
+    };
+
+    function formatDate(dateStr) {
+        if (!dateStr) return '—';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    function buildTimeline(order) {
+        const events = [];
+
+        if (order.createdAt) {
+            events.push({ icon: '📦', title: 'Pedido recibido', date: order.createdAt, detail: 'Tu pedido fue registrado en nuestro sistema.' });
+        }
+        if (order.status === 'ASSIGNED' || order.status === 'IN_TRANSIT' || order.status === 'DELIVERED' || order.status === 'FAILED') {
+            events.push({ icon: '✅', title: 'Pedido asignado', date: order.createdAt, detail: 'Tu pedido fue asignado a un courier.' });
+        }
+        if (order.status === 'IN_TRANSIT' || order.status === 'DELIVERED' || order.status === 'FAILED') {
+            events.push({ icon: '🚴', title: 'En camino', date: null, detail: 'El courier está dirigiéndose a tu dirección.' });
+        }
+        if (order.status === 'DELIVERED') {
+            events.push({ icon: '🎉', title: 'Entregado exitosamente', date: null, detail: 'Tu pedido fue entregado.' });
+        }
+        if (order.status === 'FAILED') {
+            events.push({ icon: '⚠️', title: 'Intento fallido', date: null, detail: `Intentos realizados: ${order.deliveryAttempts}/3` });
+        }
+
+        events.reverse();
+
+        return events.map((e, i) => `
+      <li>
+        <div class="dot" style="background:${i === 0 ? '#1a1a2e' : '#f0f0f0'}">${e.icon}</div>
+        <div class="event-content">
+          <div class="event-title">${e.title}</div>
+          ${e.date ? `<div class="event-date">${formatDate(e.date)}</div>` : ''}
+          <div class="event-detail">${e.detail}</div>
+        </div>
+      </li>
+    `).join('');
+    }
+
+    async function buscar() {
+        const code = document.getElementById('trackingInput').value.trim().toUpperCase();
+        if (!code) return;
+
+        document.getElementById('resultCard').style.display = 'none';
+        document.getElementById('errorMsg').style.display = 'none';
+        document.getElementById('loading').style.display = 'block';
+
+        try {
+            const res = await fetch(`http://localhost:8080/api/v1/orders/tracking/${code}`);
+            const json = await res.json();
+            document.getElementById('loading').style.display = 'none';
+
+            if (!res.ok || !json.success) {
+                document.getElementById('errorText').textContent = 'No encontramos ningún pedido con ese código.';
+                document.getElementById('errorMsg').style.display = 'block';
+                return;
+            }
+
+            const order = json.data;
+            const status = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
+            const priority = PRIORITY_CONFIG[order.priority] || PRIORITY_CONFIG.STANDARD;
+
+            const card = document.getElementById('resultCard');
+            card.style.display = 'block';
+            startPolling();
+            card.innerHTML = `
+        <div class="card-header" style="background:${status.bg}; border-bottom: 1px solid #eee;">
+          <span style="font-size:24px">${status.icon}</span>
+          <span class="tracking-code" style="color:#1a1a2e">${order.trackingCode}</span>
+          <span class="badge" style="background:${status.color}20; color:${status.color}">${status.label}</span>
+        </div>
+        <div class="card-body">
+          <div class="info-grid" style="margin-top:20px">
+            <div class="info-item">
+              <div class="info-label">👤 Destinatario</div>
+              <div class="info-value">${order.recipientName}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">📅 Fecha límite</div>
+              <div class="info-value">${formatDate(order.deliveryDeadline)}</div>
+            </div>
+            <div class="info-item" style="grid-column: span 2">
+              <div class="info-label">📍 Dirección</div>
+              <div class="info-value">${order.addressText}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">⚡ Prioridad</div>
+              <div class="info-value" style="color:${priority.color};font-weight:600">${priority.label}</div>
+            </div>
+            <div class="info-item">
+              <div class="info-label">🔄 Intentos</div>
+              <div class="info-value">${order.deliveryAttempts} de 3</div>
+            </div>
+          </div>
+          <div class="timeline-title">Historial del pedido</div>
+          <ul class="timeline">${buildTimeline(order)}</ul>
+        </div>
+      `;
+        } catch (e) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('errorText').textContent = 'Error al conectar con el servidor.';
+            document.getElementById('errorMsg').style.display = 'block';
+            stopPolling();
+        }
+    }
+
+    document.getElementById('trackingInput').addEventListener('keydown', e => {
+        if (e.key === 'Enter') buscar();
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('code')) {
+        document.getElementById('trackingInput').value = params.get('code');
+        buscar();
+    }
+
+    let pollingInterval = null;
+
+    function startPolling() {
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(() => {
+            const code = document.getElementById('trackingInput').value.trim().toUpperCase();
+            if (code) buscar();
+        }, 10000);
+    }
+
+    function stopPolling() {
+        if (pollingInterval) clearInterval(pollingInterval);
+    }
+</script>
+
+</body>
+</html>
