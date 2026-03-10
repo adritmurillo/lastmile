@@ -35,7 +35,7 @@ public class RouteDomainService {
                             order,
                             currentWeightPerCourier.get(courier.getId()),
                             currentVolumePerCourier.get(courier.getId())))
-                    .findFirst()
+                    .min(Comparator.comparingInt(courier -> assignment.get(courier.getId()).size()))
                     .ifPresent(courier -> {
                         assignment.get(courier.getId()).add(order);
                         currentWeightPerCourier.merge(courier.getId(), order.getWeightKg(), Double::sum);

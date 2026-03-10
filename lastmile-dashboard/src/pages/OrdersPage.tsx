@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Table, Tag, Button, Select, DatePicker, Space, Card, Modal, Form, Input, InputNumber } from 'antd'
-import { PlusOutlined, ReloadOutlined } from '@ant-design/icons'
+import { Table, Tag, Button, Select, DatePicker, Space, Card, Modal, Form, Input, InputNumber, message, Upload } from 'antd'
+import { PlusOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { ordersApi } from '../api/ordersApi'
@@ -31,6 +31,7 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string | undefined>()
   const [dateFilter, setDateFilter] = useState<string | undefined>()
   const [form] = Form.useForm()
+  const [messageApi, contextHolder] = message.useMessage()
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -102,14 +103,56 @@ export default function OrdersPage() {
 
   return (
     <div>
+      {contextHolder}
       <Card
         title="Gestión de Órdenes"
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
-            Nueva orden
-          </Button>
+          <Space>
+            <Upload
+              accept=".xlsx,.csv"
+              showUploadList={false}
+              beforeUpload={async (file) => {
+                setLoading(true)
+                try {
+                  await ordersApi.uploadFile(file, 'dispatcher')
+                  messageApi.success('Archivo subido correctamente, procesando órdenes...')
+                  setTimeout(() => fetchOrders(), 3000)
+                } catch {
+                  messageApi.error('Error al subir el archivo')
+                } finally {
+                  setLoading(false)
+                }
+                return false
+              }}
+            >
+              <Button icon={<UploadOutlined />}>Subir Excel/CSV</Button>
+            </Upload>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => setModalOpen(true)}>
+              Nueva orden
+            </Button>
+          </Space>
         }
       >
+        <Input.Search
+          placeholder="Buscar por código de tracking..."
+          style={{ marginBottom: 16, width: 350 }}
+          allowClear
+          onSearch={async (value) => {
+            if (!value) {
+              fetchOrders()
+              return
+            }
+            setLoading(true)
+            try {
+              const res = await ordersApi.getByTracking(value)
+              setOrders([res.data])
+            } catch {
+              messageApi.error('Orden no encontrada')
+            } finally {
+              setLoading(false)
+            }
+          }}
+        />
         <Space style={{ marginBottom: 16 }}>
           <Select
             placeholder="Filtrar por estado"

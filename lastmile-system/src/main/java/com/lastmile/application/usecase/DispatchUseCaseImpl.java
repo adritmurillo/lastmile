@@ -41,6 +41,11 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
     @Transactional
     public List<Route> generateAssignmentProposal(LocalDate date) {
         log.info("Generating assignment proposal for date: {}", date);
+        List<Route> existingRoutes = routeRepository.findByDate(date);
+        if (!existingRoutes.isEmpty()) {
+            log.info("Routes already exist for date: {}. Returning existing routes.", date);
+            return existingRoutes;
+        }
 
         List<Order> pendingOrders = orderRepository.findPendingForDate(date);
         List<Courier> availableCouriers = courierRepository.findAvailableToday();
@@ -136,7 +141,7 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
                     return routeRepository.save(route
                             .withStops(optimizedStops)
                             .withDate(date)
-                            .withStatus(RouteStatus.PENDING));
+                            .withStatus(RouteStatus.CONFIRMED));
                 })
                 .collect(Collectors.toList());
 

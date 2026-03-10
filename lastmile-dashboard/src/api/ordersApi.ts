@@ -16,4 +16,17 @@ export const ordersApi = {
     const response = await api.get<ApiResponse<Order>>(`/orders/tracking/${trackingCode}`)
     return response.data
   },
+  getByTracking: async (trackingCode: string) => {
+    const response = await api.get<ApiResponse<Order>>(`/orders/tracking/${trackingCode}`)
+    return response.data
+  },
+  uploadFile: async (file: File, uploadedBy: string) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('uploadedBy', uploadedBy)
+    const response = await api.post<ApiResponse<string>>('/orders/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    })
+    return response.data
+},
 }

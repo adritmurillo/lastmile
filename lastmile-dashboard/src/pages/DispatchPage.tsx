@@ -68,12 +68,13 @@ export default function DispatchPage() {
   }
 
   const currentStep = () => {
-    if (routes.length === 0) return 0
-    if (routes.every(r => r.status === 'COMPLETED')) return 3
-    if (routes.some(r => r.status === 'IN_PROGRESS')) return 2
-    if (routes.some(r => r.status === 'CONFIRMED')) return 1
-    return 0
-  }
+  if (routes.length === 0) return 0
+  if (routes.some(r => r.status === 'COMPLETED')) return 3
+  if (routes.some(r => r.status === 'IN_PROGRESS')) return 3
+  if (routes.some(r => r.status === 'CONFIRMED')) return 2
+  if (routes.some(r => r.status === 'PENDING')) return 1
+  return 0
+}
 
   const columns: ColumnsType<Route> = [
     {

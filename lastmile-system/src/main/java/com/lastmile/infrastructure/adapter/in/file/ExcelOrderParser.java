@@ -62,15 +62,13 @@ public class ExcelOrderParser {
     private Order parseRow(Row row) {
         return Order.builder()
                 .externalTrackingCode(getStringValue(row, 0))
-                .platformOrderNumber(getStringValue(row, 1))
-                .recipientName(getStringValue(row, 2))
-                .recipientPhone(getStringValue(row, 3))
-                .addressText(getStringValue(row, 4))
-                .weightKg(getDoubleValue(row, 5))
-                .volumeCm3(getDoubleValue(row, 6))
-                .priority(parsePriority(getStringValue(row, 7)))
-                .deliveryDeadline(parseDate(getStringValue(row, 8)))
-                .notes(getStringValue(row, 9))
+                .recipientName(getStringValue(row, 1))
+                .recipientPhone(getStringValue(row, 2))
+                .addressText(getStringValue(row, 3))
+                .weightKg(getDoubleValue(row, 4))
+                .volumeCm3(getDoubleValue(row, 5))
+                .priority(parsePriority(getStringValue(row, 6)))
+                .deliveryDeadline(parseDateFromCell(row, 7))
                 .deliveryAttempts(0)
                 .createdAt(LocalDateTime.now())
                 .loadSource(LoadSource.FILE)
@@ -132,5 +130,16 @@ public class ExcelOrderParser {
             }
         }
         return true;
+    }
+
+    private LocalDate parseDateFromCell(Row row, int cellIndex) {
+        Cell cell = row.getCell(cellIndex);
+        if (cell == null) return null;
+
+        if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+            return cell.getLocalDateTimeCellValue().toLocalDate();
+        }
+
+        return parseDate(getStringValue(row, cellIndex));
     }
 }
