@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Table, Tag, Button, Select, DatePicker, Space, Card, Modal, Form, Input, InputNumber, message, Upload } from 'antd'
 import { PlusOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -32,6 +32,7 @@ export default function OrdersPage() {
   const [dateFilter, setDateFilter] = useState<string | undefined>()
   const [form] = Form.useForm()
   const [messageApi, contextHolder] = message.useMessage()
+  const allOrdersRef = useRef<Order[]>([])
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -40,6 +41,7 @@ export default function OrdersPage() {
         status: statusFilter,
         date: dateFilter,
       })
+      allOrdersRef.current = res.data
       setOrders(res.data)
     } finally {
       setLoading(false)
@@ -137,6 +139,17 @@ export default function OrdersPage() {
           placeholder="Buscar por código de tracking..."
           style={{ marginBottom: 16, width: 350 }}
           allowClear
+          onChange={(e) => {
+            const value = e.target.value
+            if (!value) {
+              fetchOrders()
+              return
+            }
+            const filtered = allOrdersRef.current.filter(o =>
+              o.trackingCode.toLowerCase().includes(value.toLowerCase())
+            )
+            setOrders(filtered)
+          }}
           onSearch={async (value) => {
             if (!value) {
               fetchOrders()

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Card, Table, Tag, DatePicker, Button } from 'antd'
+import { useEffect, useState, useRef } from 'react'
+import { Card, Table, Tag, DatePicker, Button, Input } from 'antd'
 import { ReloadOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
@@ -30,11 +30,15 @@ export default function RoutesPage() {
   const [routes, setRoutes] = useState<Route[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'))
+  const allRoutesRef = useRef<Route[]>([])
+
+
 
   const fetchRoutes = async () => {
     setLoading(true)
     try {
       const res = await routesApi.getRoutesByDate(selectedDate)
+      allRoutesRef.current = res.data
       setRoutes(res.data)
     } finally {
       setLoading(false)
@@ -115,6 +119,23 @@ export default function RoutesPage() {
           onChange={(_, dateStr) => setSelectedDate(dateStr as string)}
           format="YYYY-MM-DD"
           style={{ marginBottom: 16 }}
+        />
+
+        <Input.Search
+          placeholder="Buscar por nombre de courier..."
+          style={{ marginBottom: 16, marginLeft: 16, width: 300 }}
+          allowClear
+          onChange={(e) => {
+            const value = e.target.value
+            if (!value) {
+              setRoutes(allRoutesRef.current)
+              return
+            }
+            const filtered = allRoutesRef.current.filter(r =>
+              r.courier.fullName.toLowerCase().includes(value.toLowerCase())
+            )
+            setRoutes(filtered)
+          }}
         />
         <Table
           columns={columns}

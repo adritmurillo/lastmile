@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { Card, Table, Tag, Button, Modal, Form, Input, message, Space, Select, InputNumber, Tabs } from 'antd'
 import { PlusOutlined, CheckOutlined, StopOutlined, EditOutlined, CarOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
@@ -8,6 +8,7 @@ import type { Courier, Vehicle } from '../types'
 export default function CouriersPage() {
   const [couriers, setCouriers] = useState<Courier[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const allVehiclesRef = useRef<Vehicle[]>([])
   const [loading, setLoading] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
@@ -33,6 +34,7 @@ export default function CouriersPage() {
   const fetchVehicles = async () => {
     const res = await couriersApi.getVehicles()
     setVehicles(res.data)
+    allVehiclesRef.current = res.data
   }
 
   useEffect(() => {
@@ -158,6 +160,8 @@ export default function CouriersPage() {
     },
   ]
 
+
+
   const vehicleColumns: ColumnsType<Vehicle> = [
     { title: 'Placa', dataIndex: 'licensePlate', key: 'licensePlate' },
     { title: 'Tipo', dataIndex: 'type', key: 'type' },
@@ -210,6 +214,23 @@ export default function CouriersPage() {
                   </Button>
                 }
               >
+                <Input.Search
+                  placeholder="Buscar por placa o tipo..."
+                  style={{ marginBottom: 16, width: 300 }}
+                  allowClear
+                  onChange={(e) => {
+                    const value = e.target.value
+                    if (!value) {
+                      setVehicles(allVehiclesRef.current)
+                      return
+                    }
+                    const filtered = allVehiclesRef.current.filter(v =>
+                      v.licensePlate.toLowerCase().includes(value.toLowerCase()) ||
+                      v.type.toLowerCase().includes(value.toLowerCase())
+                    )
+                    setVehicles(filtered)
+                  }}
+                />
                 <Table columns={vehicleColumns} dataSource={vehicles} rowKey="id" loading={loading} pagination={{ pageSize: 10 }} />
               </Card>
             ),
