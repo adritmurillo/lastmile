@@ -48,6 +48,8 @@ export interface Stats {
   completedRoutes: number
   totalCouriers: number
   activeCouriers: number
+  cancelledOrders: number
+  pendingRoutes: number
 }
 
 export interface Courier {

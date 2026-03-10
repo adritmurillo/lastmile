@@ -42,4 +42,15 @@ public interface RouteJpaRepository extends JpaRepository<RouteEntity, UUID> {
             ORDER BY r.status ASC
             """)
     List<RouteEntity> findByDateWithDetails(@Param("date") LocalDate date);
+
+    @Query("""
+    SELECT DISTINCT r FROM RouteEntity r
+    LEFT JOIN FETCH r.stops s
+    LEFT JOIN FETCH s.order o
+    LEFT JOIN FETCH r.courier c
+    LEFT JOIN FETCH c.vehicle
+    WHERE o.id = :orderId
+    """)
+    Optional<RouteEntity> findByOrderId(@Param("orderId") UUID orderId);
+
 }

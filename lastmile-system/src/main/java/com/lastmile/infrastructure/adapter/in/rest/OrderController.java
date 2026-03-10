@@ -152,4 +152,12 @@ public class OrderController {
                 .body(ApiResponse.ok(orderRestMapper.toResponse(saved)));
     }
 
+    @PatchMapping("/{id}/cancel")
+    @Operation(summary = "Cancel an order")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
+    public ResponseEntity<ApiResponse<OrderResponse>> cancelOrder(@PathVariable UUID id) {
+        OrderDto dto = orderDomainMapper.toDto(manageOrdersUseCase.cancelOrder(id));
+        return ResponseEntity.ok(ApiResponse.ok(orderRestMapper.toResponse(dto)));
+    }
+
 }

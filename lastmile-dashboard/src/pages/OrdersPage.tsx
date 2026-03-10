@@ -33,6 +33,8 @@ export default function OrdersPage() {
   const [form] = Form.useForm()
   const [messageApi, contextHolder] = message.useMessage()
   const allOrdersRef = useRef<Order[]>([])
+  const [detailModalOpen, setDetailModalOpen] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -101,6 +103,29 @@ export default function OrdersPage() {
       key: 'deliveryDeadline',
       render: (d) => dayjs(d).format('DD/MM/YYYY'),
     },
+    {
+      title: 'Acciones',
+      key: 'actions',
+      render: (_, record) => (
+        <Space>
+          <Button size="small" onClick={() => {
+            setSelectedOrder(record)
+            setDetailModalOpen(true)
+          }}>Ver</Button>
+          {record.status !== 'DELIVERED' && record.status !== 'CANCELLED' && (
+            <Button size="small" danger onClick={async () => {
+              try {
+                await ordersApi.cancelOrder(record.id)
+                messageApi.success('Orden cancelada')
+                fetchOrders()
+              } catch {
+                messageApi.error('No se puede cancelar esta orden')
+              }
+            }}>Cancelar</Button>
+          )}
+        </Space>
+      )
+    }
   ]
 
   return (
@@ -230,6 +255,28 @@ export default function OrdersPage() {
             <Input type="date" />
           </Form.Item>
         </Form>
+      </Modal>
+
+      <Modal
+        title={`Detalle — ${selectedOrder?.trackingCode}`}
+        open={detailModalOpen}
+        onCancel={() => setDetailModalOpen(false)}
+        footer={null}
+      >
+        {selectedOrder && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <div><strong>Destinatario:</strong> {selectedOrder.recipientName}</div>
+            <div><strong>Teléfono:</strong> {selectedOrder.recipientPhone}</div>
+            <div><strong>Dirección:</strong> {selectedOrder.addressText}</div>
+            <div><strong>Peso:</strong> {selectedOrder.weightKg} kg</div>
+            <div><strong>Volumen:</strong> {selectedOrder.volumeCm3} cm³</div>
+            <div><strong>Prioridad:</strong> {selectedOrder.priority}</div>
+            <div><strong>Estado:</strong> {statusLabels[selectedOrder.status]}</div>
+            <div><strong>Intentos:</strong> {selectedOrder.deliveryAttempts}/3</div>
+            <div><strong>Fecha límite:</strong> {dayjs(selectedOrder.deliveryDeadline).format('DD/MM/YYYY')}</div>
+            <div><strong>Creado:</strong> {dayjs(selectedOrder.createdAt).format('DD/MM/YYYY HH:mm')}</div>
+          </div>
+        )}
       </Modal>
     </div>
   )

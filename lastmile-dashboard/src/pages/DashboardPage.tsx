@@ -7,12 +7,13 @@ import {
   CloseCircleOutlined,
   ClockCircleOutlined,
   TeamOutlined,
+  StopOutlined,
 } from '@ant-design/icons'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts'
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { statsApi } from '../api/statsApi'
 import type { Stats } from '../types'
 
-const COLORS = ['#1677ff', '#52c41a', '#ff4d4f', '#faad14', '#722ed1']
+const COLORS = ['#faad14', '#52c41a', '#ff4d4f', '#1677ff', '#722ed1', '#8c8c8c']
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null)
@@ -30,12 +31,14 @@ export default function DashboardPage() {
     { name: 'Fallidos', value: stats.failedOrders },
     { name: 'En tránsito', value: stats.inTransitOrders },
     { name: 'Asignados', value: stats.assignedOrders },
-  ] : []
+    { name: 'Cancelados', value: stats.cancelledOrders ?? 0 },
+  ].filter(d => d.value > 0) : []
 
   return (
     <div>
       <h2 style={{ marginBottom: 24 }}>Dashboard — Hoy</h2>
 
+      {/* Fila 1: Stats de órdenes */}
       <Row gutter={[16, 16]}>
         <Col span={4}>
           <Card loading={loading}>
@@ -52,7 +55,7 @@ export default function DashboardPage() {
               title="Pendientes"
               value={stats?.pendingOrders}
               prefix={<ClockCircleOutlined />}
-              styles={{ content :{color : '#faad14' }}}
+              styles={{ content: { color: '#faad14' } }}
             />
           </Card>
         </Col>
@@ -62,7 +65,7 @@ export default function DashboardPage() {
               title="En tránsito"
               value={stats?.inTransitOrders}
               prefix={<CarOutlined />}
-              styles={{content : { color: '#1677ff' }}}
+              styles={{ content: { color: '#1677ff' } }}
             />
           </Card>
         </Col>
@@ -89,6 +92,20 @@ export default function DashboardPage() {
         <Col span={4}>
           <Card loading={loading}>
             <Statistic
+              title="Cancelados"
+              value={stats?.cancelledOrders}
+              prefix={<StopOutlined />}
+              styles={{ content: { color: '#8c8c8c' } }}
+            />
+          </Card>
+        </Col>
+      </Row>
+
+      {/* Fila 2: Couriers activos */}
+      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
+        <Col span={24}>
+          <Card loading={loading}>
+            <Statistic
               title="Couriers activos"
               value={stats?.activeCouriers}
               prefix={<TeamOutlined />}
@@ -98,6 +115,7 @@ export default function DashboardPage() {
         </Col>
       </Row>
 
+      {/* Fila 3: Tasa de éxito y distribución */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={12}>
           <Card title="Tasa de éxito" loading={loading}>
@@ -113,35 +131,50 @@ export default function DashboardPage() {
         </Col>
         <Col span={12}>
           <Card title="Distribución de órdenes" loading={loading}>
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="value">
-                  {pieData.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+            {pieData.length === 0 ? (
+              <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#888' }}>
+                Sin datos por ahora
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={60} outerRadius={80} dataKey="value">
+                    {pieData.map((_, index) => (
+                      <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
           </Card>
         </Col>
       </Row>
 
+      {/* Fila 4: Rutas del día */}
       <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
         <Col span={24}>
           <Card title="Rutas del día" loading={loading}>
             <Row gutter={16}>
-              <Col span={8}>
+              <Col span={6}>
                 <Statistic title="Total rutas" value={stats?.totalRoutes} />
               </Col>
-              <Col span={8}>
+              <Col span={6}>
+                <Statistic
+                  title="Pendientes"
+                  value={stats?.pendingRoutes}
+                  styles={{ content: { color: '#faad14' } }}
+                />
+              </Col>
+              <Col span={6}>
                 <Statistic
                   title="En progreso"
                   value={stats?.inProgressRoutes}
                   styles={{ content: { color: '#1677ff' } }}
                 />
               </Col>
-              <Col span={8}>
+              <Col span={6}>
                 <Statistic
                   title="Completadas"
                   value={stats?.completedRoutes}
@@ -155,11 +188,11 @@ export default function DashboardPage() {
 
       {(stats?.failedOrders ?? 0) > 0 && (
         <Alert
-            style={{ marginTop: 16 }}
-            description={`Hay ${stats!.failedOrders} órdenes fallidas que requieren atención`}
-            type="warning"
-            showIcon
-            />
+          style={{ marginTop: 16 }}
+          description={`Hay ${stats!.failedOrders} órdenes fallidas que requieren atención`}
+          type="warning"
+          showIcon
+        />
       )}
     </div>
   )

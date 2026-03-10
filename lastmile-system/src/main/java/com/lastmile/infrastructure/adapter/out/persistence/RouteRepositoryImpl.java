@@ -49,7 +49,12 @@ public class RouteRepositoryImpl implements RouteRepository {
 
     @Override
     public List<Route> findByDate(LocalDate date) {
-        return routeMapper.toDomainList(routeJpaRepository.findByDateWithDetails(date));
+        return routeMapper.toDomainList(
+                routeJpaRepository.findByDateWithDetails(date)
+                        .stream()
+                        .filter(r -> r.getStatus() != com.lastmile.domain.model.RouteStatus.CANCELLED)
+                        .toList()
+        );
     }
 
     @Override
@@ -65,5 +70,10 @@ public class RouteRepositoryImpl implements RouteRepository {
     @Override
     public Optional<Stop> findStopById(UUID id) {
         return stopJpaRepository.findByIdWithDetails(id).map(stopMapper :: toDomain);
+    }
+
+    @Override
+    public Optional<Route> findRouteByOrderId(UUID orderId) {
+        return routeJpaRepository.findByOrderId(orderId).map(routeMapper::toDomain);
     }
 }

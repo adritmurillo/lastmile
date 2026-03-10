@@ -1,12 +1,10 @@
 package com.lastmile.application.usecase;
 
-import com.lastmile.domain.model.LoadSource;
-import com.lastmile.domain.model.Order;
-import com.lastmile.domain.model.OrderPriority;
-import com.lastmile.domain.model.OrderStatus;
+import com.lastmile.domain.model.*;
 import com.lastmile.domain.port.in.ManageOrdersUseCase;
 import com.lastmile.domain.port.out.NotificationPort;
 import com.lastmile.domain.port.out.OrderRepository;
+import com.lastmile.domain.port.out.RouteRepository;
 import com.lastmile.domain.service.OrderDomainService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +26,7 @@ public class ManageOrdersUseCaseImpl implements ManageOrdersUseCase {
     private final OrderRepository orderRepository;
     private final OrderDomainService orderDomainService;
     private final NotificationPort notificationPort;
+    private final RouteRepository routeRepository;
 
     @Override
     public List<Order> getPendingOrders() {
@@ -86,6 +85,40 @@ public class ManageOrdersUseCaseImpl implements ManageOrdersUseCase {
         log.info("Creating new order: {}", newOrder.getTrackingCode());
         Order saved = orderRepository.save(newOrder);
         notificationPort.notifyOrderCreated(saved);
+        return saved;
+    }
+
+    @Override
+    @Transactional
+    public Order cancelOrder(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (order.getStatus() == OrderStatus.DELIVERED ||
+                order.getStatus() == OrderStatus.CANCELLED) {
+            throw new RuntimeException("Cannot cancel order in status: " + order.getStatus());
+        }
+
+        Order cancelled = order.withStatus(OrderStatus.CANCELLED);
+        log.info("Cancelling order: {}", order.getTrackingCode());
+        Order saved = orderRepository.save(cancelled);
+
+        routeRepository.findRouteByOrderId(orderId).ifPresent(route -> {
+            List<Stop> updatedStops = route.getStops().stream()
+                    .filter(stop -> !stop.getOrder().getId().equals(orderId))
+                    .collect(Collectors.toList());
+
+            if (updatedStops.isEmpty()) {
+                routeRepository.save(route
+                        .withStops(updatedStops)
+                        .withStatus(RouteStatus.CANCELLED));
+                log.info("Route {} cancelled because it has no more stops", route.getId());
+            } else {
+                routeRepository.save(route.withStops(updatedStops));
+            }
+            log.info("Removed stop for cancelled order {} from route {}", order.getTrackingCode(), route.getId());
+        });
+
         return saved;
     }
 }

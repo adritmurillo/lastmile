@@ -25,8 +25,18 @@ export const ordersApi = {
     formData.append('file', file)
     formData.append('uploadedBy', uploadedBy)
     const response = await api.post<ApiResponse<string>>('/orders/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' }
     })
     return response.data
-},
+  },
+  cancelOrder: async (id: string) => {
+    const response = await api.patch<ApiResponse<Order>>(`/orders/${id}/cancel`)
+    return response.data
+  },
+
+  getById: async (id: string) => {
+    const response = await api.get<ApiResponse<Order>>(`/orders/${id}`)
+    return response.data
+  },
+
 }

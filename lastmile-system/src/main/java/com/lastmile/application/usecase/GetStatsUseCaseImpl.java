@@ -31,21 +31,25 @@ public class GetStatsUseCaseImpl implements GetStatsUseCase {
         List<com.lastmile.domain.model.Route> todayRoutes = routeRepository.findByDate(LocalDate.now());
         List<com.lastmile.domain.model.Courier> allCouriers = courierRepository.findAll();
 
-        long pending    = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.PENDING).count();
-        long assigned   = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.ASSIGNED).count();
-        long inTransit  = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.IN_TRANSIT).count();
-        long delivered  = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERED).count();
-        long failed     = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.FAILED).count();
-        long cancelled  = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.CANCELLED).count();
+        long pending   = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.PENDING).count();
+        long assigned  = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.ASSIGNED).count();
+        long inTransit = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.IN_TRANSIT).count();
+        long delivered = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERED).count();
+        long failed    = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.FAILED).count();
+        long cancelled = allOrders.stream().filter(o -> o.getStatus() == OrderStatus.CANCELLED).count();
 
         long totalOrders = allOrders.size();
         double successRate = totalOrders > 0
                 ? Math.round((delivered * 100.0 / totalOrders) * 10.0) / 10.0
                 : 0.0;
 
-        long pendingRoutes    = todayRoutes.stream().filter(r -> r.getStatus() == RouteStatus.PENDING).count();
-        long inProgressRoutes = todayRoutes.stream().filter(r -> r.getStatus() == RouteStatus.IN_PROGRESS).count();
-        long completedRoutes  = todayRoutes.stream().filter(r -> r.getStatus() == RouteStatus.COMPLETED).count();
+        List<com.lastmile.domain.model.Route> activeRoutes = todayRoutes.stream()
+                .filter(r -> r.getStatus() != RouteStatus.CANCELLED)
+                .toList();
+
+        long pendingRoutes    = activeRoutes.stream().filter(r -> r.getStatus() == RouteStatus.PENDING).count();
+        long inProgressRoutes = activeRoutes.stream().filter(r -> r.getStatus() == RouteStatus.IN_PROGRESS).count();
+        long completedRoutes  = activeRoutes.stream().filter(r -> r.getStatus() == RouteStatus.COMPLETED).count();
 
         long activeCouriers = allCouriers.stream()
                 .filter(c -> c.getStatus() == com.lastmile.domain.model.CourierStatus.ACTIVE)
@@ -60,7 +64,7 @@ public class GetStatsUseCaseImpl implements GetStatsUseCase {
                 .failedOrders(failed)
                 .cancelledOrders(cancelled)
                 .successRate(successRate)
-                .totalRoutes(todayRoutes.size())
+                .totalRoutes(activeRoutes.size())
                 .pendingRoutes(pendingRoutes)
                 .inProgressRoutes(inProgressRoutes)
                 .completedRoutes(completedRoutes)

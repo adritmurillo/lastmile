@@ -16,4 +16,5 @@ public interface ManageOrdersUseCase {
     Optional<Order> getOrderByTrackingCode(String trackingCode);
     int rescheduleFailedOrders();
     Order createOrder(Order order);
+    Order cancelOrder(UUID orderId);
 }

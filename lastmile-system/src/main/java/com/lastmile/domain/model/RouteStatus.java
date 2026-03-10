@@ -4,5 +4,6 @@ public enum RouteStatus {
     PENDING,
     IN_PROGRESS,
     COMPLETED,
-    CONFIRMED
+    CONFIRMED,
+    CANCELLED
 }
