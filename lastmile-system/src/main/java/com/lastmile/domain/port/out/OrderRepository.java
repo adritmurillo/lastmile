@@ -19,4 +19,5 @@ public interface OrderRepository {
     List<Order> findReschedulableFailedOrders();
     boolean existsByExternalTrackingCode(String externalTrackingCode);
     List<Order> findAll();
+    List<Order> findByDateRange(LocalDate startDate, LocalDate endDate);
 }

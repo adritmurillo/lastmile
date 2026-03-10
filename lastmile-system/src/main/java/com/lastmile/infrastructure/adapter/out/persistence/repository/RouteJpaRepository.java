@@ -53,4 +53,18 @@ public interface RouteJpaRepository extends JpaRepository<RouteEntity, UUID> {
     """)
     Optional<RouteEntity> findByOrderId(@Param("orderId") UUID orderId);
 
+    @Query("""
+    SELECT DISTINCT r FROM RouteEntity r
+    LEFT JOIN FETCH r.stops s
+    LEFT JOIN FETCH s.order
+    LEFT JOIN FETCH r.courier c
+    LEFT JOIN FETCH c.vehicle
+    WHERE r.date >= :startDate
+    AND r.date <= :endDate
+    AND r.status != 'CANCELLED'
+    """)
+    List<RouteEntity> findByDateRangeWithDetails(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
 }

@@ -6,4 +6,10 @@ export const statsApi = {
     const response = await api.get<ApiResponse<Stats>>('/stats/today')
     return response.data
   },
+  getStatsByPeriod: async (startDate: string, endDate: string) => {
+    const response = await api.get<ApiResponse<Stats>>('/stats/period', {
+        params: { startDate, endDate }
+    })
+    return response.data
+},
 }

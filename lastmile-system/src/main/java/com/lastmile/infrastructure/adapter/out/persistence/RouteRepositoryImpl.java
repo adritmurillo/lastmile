@@ -76,4 +76,10 @@ public class RouteRepositoryImpl implements RouteRepository {
     public Optional<Route> findRouteByOrderId(UUID orderId) {
         return routeJpaRepository.findByOrderId(orderId).map(routeMapper::toDomain);
     }
+
+    @Override
+    public List<Route> findByDateRange(LocalDate startDate, LocalDate endDate) {
+        return routeMapper.toDomainList(
+                routeJpaRepository.findByDateRangeWithDetails(startDate, endDate));
+    }
 }

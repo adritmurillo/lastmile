@@ -16,4 +16,5 @@ public interface RouteRepository {
     Stop saveStop(Stop stop);
     Optional<Stop> findStopById(UUID id);
     Optional<Route> findRouteByOrderId(UUID orderId);
+    List<Route> findByDateRange(LocalDate startDate, LocalDate endDate);
 }

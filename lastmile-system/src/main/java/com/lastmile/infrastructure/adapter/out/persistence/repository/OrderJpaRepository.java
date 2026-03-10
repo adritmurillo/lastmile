@@ -44,4 +44,13 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
     @Transactional
     void updateStatusBatch(@Param("status") OrderStatus status, @Param("ids") List<UUID> ids);
 
+    @Query("""
+    SELECT o FROM OrderEntity o
+    WHERE o.deliveryDeadline >= :startDate
+    AND o.deliveryDeadline <= :endDate
+    """)
+    List<OrderEntity> findByDeliveryDeadlineBetween(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate);
+
 }

@@ -68,4 +68,9 @@ public class OrderRepositoryImpl implements OrderRepository {
     public List<Order> findAll() {
         return mapper.toDomainList(jpaRepository.findAll());
     }
+
+    @Override
+    public List<Order> findByDateRange(LocalDate startDate, LocalDate endDate) {
+        return mapper.toDomainList(jpaRepository.findByDeliveryDeadlineBetween(startDate, endDate));
+    }
 }

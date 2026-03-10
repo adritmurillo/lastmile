@@ -72,4 +72,50 @@ public class GetStatsUseCaseImpl implements GetStatsUseCase {
                 .activeCouriers(activeCouriers)
                 .build();
     }
+
+    @Override
+    public StatsDto getStatsByPeriod(LocalDate startDate, LocalDate endDate) {
+        log.info("Fetching stats for period: {} to {}", startDate, endDate);
+
+        List<com.lastmile.domain.model.Order> orders = orderRepository.findByDateRange(startDate, endDate);
+        List<com.lastmile.domain.model.Route> routes = routeRepository.findByDateRange(startDate, endDate);
+        List<com.lastmile.domain.model.Courier> allCouriers = courierRepository.findAll();
+
+        long pending   = orders.stream().filter(o -> o.getStatus() == OrderStatus.PENDING).count();
+        long assigned  = orders.stream().filter(o -> o.getStatus() == OrderStatus.ASSIGNED).count();
+        long inTransit = orders.stream().filter(o -> o.getStatus() == OrderStatus.IN_TRANSIT).count();
+        long delivered = orders.stream().filter(o -> o.getStatus() == OrderStatus.DELIVERED).count();
+        long failed    = orders.stream().filter(o -> o.getStatus() == OrderStatus.FAILED).count();
+        long cancelled = orders.stream().filter(o -> o.getStatus() == OrderStatus.CANCELLED).count();
+
+        long totalOrders = orders.size();
+        double successRate = totalOrders > 0
+                ? Math.round((delivered * 100.0 / totalOrders) * 10.0) / 10.0
+                : 0.0;
+
+        long pendingRoutes    = routes.stream().filter(r -> r.getStatus() == RouteStatus.PENDING).count();
+        long inProgressRoutes = routes.stream().filter(r -> r.getStatus() == RouteStatus.IN_PROGRESS).count();
+        long completedRoutes  = routes.stream().filter(r -> r.getStatus() == RouteStatus.COMPLETED).count();
+
+        long activeCouriers = allCouriers.stream()
+                .filter(c -> c.getStatus() == com.lastmile.domain.model.CourierStatus.ACTIVE)
+                .count();
+
+        return StatsDto.builder()
+                .totalOrders(totalOrders)
+                .pendingOrders(pending)
+                .assignedOrders(assigned)
+                .inTransitOrders(inTransit)
+                .deliveredOrders(delivered)
+                .failedOrders(failed)
+                .cancelledOrders(cancelled)
+                .successRate(successRate)
+                .totalRoutes(routes.size())
+                .pendingRoutes(pendingRoutes)
+                .inProgressRoutes(inProgressRoutes)
+                .completedRoutes(completedRoutes)
+                .totalCouriers(allCouriers.size())
+                .activeCouriers(activeCouriers)
+                .build();
+    }
 }
