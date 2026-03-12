@@ -75,20 +75,21 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
 
     @Override
     @Transactional
-    public Stop registerFailedDelivery(UUID stopId, FailureReason reason) {
+    public Stop registerFailedDelivery(UUID stopId, FailureReason reason, String failureNotes) {
         Stop stop = routeRepository.findStopById(stopId)
                 .orElseThrow(() -> new StopNotFoundException(stopId));
 
-        Stop failed = stop.markAsFailed(LocalDateTime.now(), reason);
+        Stop failed = stop.markAsFailed(LocalDateTime.now(), reason, failureNotes);
 
         Order failedOrder = stop.getOrder().recordFailure();
         orderRepository.save(failedOrder);
         notificationPort.notifyOrderFailed(failedOrder, failed);
 
-        log.info("Delivery failed for order {} at stop {}. Reason: {}. Attempts: {}/3",
-                stop.getOrder().getTrackingCode(), stopId, reason, failedOrder.getDeliveryAttempts());
+        log.info("Delivery failed for order {} at stop {}. Reason: {}. Notes: {}. Attempts: {}/3",
+                stop.getOrder().getTrackingCode(), stopId, reason, failureNotes, failedOrder.getDeliveryAttempts());
 
         return routeRepository.saveStop(failed);
+
     }
 
     @Override

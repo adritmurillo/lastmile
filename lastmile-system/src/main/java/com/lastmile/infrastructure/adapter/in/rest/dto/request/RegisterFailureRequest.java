@@ -11,4 +11,6 @@ public class RegisterFailureRequest {
 
     @NotNull(message = "Failure reason is required")
     private FailureReason reason;
+
+    private String failureNotes;
 }

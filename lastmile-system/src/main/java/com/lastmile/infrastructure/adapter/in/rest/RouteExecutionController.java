@@ -111,7 +111,7 @@ public class RouteExecutionController {
 
         StopDto stop = routeDomainMapper.toStopDto(
                 executeRouteUseCase.registerFailedDelivery(
-                        stopId, request.getReason()));
+                        stopId, request.getReason(), request.getFailureNotes()));
 
         return ResponseEntity.ok(ApiResponse.ok(routeRestMapper.toStopResponse(stop)));
     }

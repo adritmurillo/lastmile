@@ -16,8 +16,11 @@ export const routesApi = {
     return response.data.data
   },
 
-  failStop: async (stopId: string, reason: string) => {
-    const response = await apiClient.post<{ data: any }>(`/routes/stops/${stopId}/fail`, { reason })
+  failStop: async (stopId: string, reason: string, failureNotes?: string) => {
+    const response = await apiClient.post<{ data: any }>(`/routes/stops/${stopId}/fail`, {
+      reason,
+      failureNotes
+    })
     return response.data.data
   }
 }

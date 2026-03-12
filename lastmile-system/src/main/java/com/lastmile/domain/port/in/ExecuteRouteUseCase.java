@@ -12,7 +12,8 @@ public interface ExecuteRouteUseCase {
     Route getMyRouteForToday(UUID courierId);
     Route startRoute(UUID routeId);
     Stop registerSuccessfulDelivery(UUID stopId, String proofPhotoUrl);
-    Stop registerFailedDelivery(UUID stopId, FailureReason reason);
+    Stop registerFailedDelivery(UUID stopId, FailureReason reason, String failureNotes);
     Route completeRoute(UUID routeId);
     List<Route> getRoutesByDate(LocalDate date);
+
 }

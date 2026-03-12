@@ -49,6 +49,9 @@ public class StopEntity {
     @Column(name = "failure_reason")
     private FailureReason failureReason;
 
+    @Column(name = "failure_notes")
+    private String failureNotes;
+
     @Column(name = "proof_photo_url")
     private String proofPhotoUrl;
 }
