@@ -9,6 +9,7 @@ import java.util.UUID;
 public interface CourierRepository {
     Courier save(Courier courier);
     Optional<Courier> findById(UUID id);
+    Optional<Courier> findByUserId(UUID userId);
     List<Courier> findAvailableToday();
     List<Courier> findAll();
 }

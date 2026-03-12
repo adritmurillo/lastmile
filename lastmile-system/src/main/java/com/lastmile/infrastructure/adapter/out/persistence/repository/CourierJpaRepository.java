@@ -5,9 +5,11 @@ import com.lastmile.domain.model.CourierStatus;
 import com.lastmile.infrastructure.adapter.out.persistence.entity.CourierEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -16,5 +18,7 @@ public interface CourierJpaRepository extends JpaRepository<CourierEntity, UUID>
     boolean existsByDocumentNumber(String documentNumber);
     @Query("SELECT c FROM CourierEntity c LEFT JOIN FETCH c.vehicle WHERE c.status = 'ACTIVE'")
     List<CourierEntity> findAvailableCouriersWithVehicle();
+
+    Optional<CourierEntity> findByUserId(@Param("userId") UUID userId);
 
 }

@@ -28,6 +28,11 @@ public class CourierRepositoryImpl implements CourierRepository {
     }
 
     @Override
+    public Optional<Courier> findByUserId(UUID userId) {
+        return jpaRepository.findByUserId(userId).map(mapper :: toDomain);
+    }
+
+    @Override
     public List<Courier> findAvailableToday() {
         return jpaRepository.findAvailableCouriersWithVehicle()
                 .stream()

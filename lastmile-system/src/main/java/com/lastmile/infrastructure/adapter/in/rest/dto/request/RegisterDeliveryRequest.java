@@ -8,6 +8,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RegisterDeliveryRequest {
 
-    @NotBlank(message = "Proof photo URL is required")
+
     private String proofPhotoUrl;
 }

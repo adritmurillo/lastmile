@@ -20,6 +20,9 @@ public class CourierEntity {
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
+    @Column(name = "user_id")
+    private UUID userId;
+
     @Column(name = "first_name", nullable = false)
     private String firstName;
 

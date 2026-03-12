@@ -1,5 +1,6 @@
 package com.lastmile.infrastructure.adapter.in.rest;
 
+import com.lastmile.application.usecase.dto.AuthResponseDto;
 import com.lastmile.domain.model.UserRole;
 import com.lastmile.domain.port.in.AuthUseCase;
 import com.lastmile.infrastructure.adapter.in.rest.dto.response.ApiResponse;
@@ -21,25 +22,25 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<Map<String, String>>> login(
+    public ResponseEntity<ApiResponse<AuthResponseDto>> login(
             @RequestBody Map<String, String> request) {
-        String token = authUseCase.login(
+        AuthResponseDto response = authUseCase.login(
                 request.get("username"),
                 request.get("password")
         );
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("token", token)));
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Map<String, String>>> register(
+    public ResponseEntity<ApiResponse<AuthResponseDto>> register(
             @RequestBody Map<String, String> request) {
-        String token = authUseCase.register(
+        AuthResponseDto response = authUseCase.register(
                 request.get("username"),
                 request.get("email"),
                 request.get("password"),
                 UserRole.valueOf(request.get("role").toUpperCase())
         );
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("token", token)));
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
 }
