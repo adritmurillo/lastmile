@@ -82,4 +82,13 @@ public class RouteRepositoryImpl implements RouteRepository {
         return routeMapper.toDomainList(
                 routeJpaRepository.findByDateRangeWithDetails(startDate, endDate));
     }
+
+    @Override
+    public List<Stop> findPendingStopsByCourier(UUID courierId) {
+        return stopJpaRepository
+                .findPendingByCourierBeforeDate(courierId, LocalDate.now())
+                .stream()
+                .map(stopMapper :: toDomain)
+                .toList();
+    }
 }

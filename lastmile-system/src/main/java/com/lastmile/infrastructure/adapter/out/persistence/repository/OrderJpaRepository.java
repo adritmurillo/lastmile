@@ -23,10 +23,14 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
     boolean existsByExternalTrackingCode(String externalTrackingCode);
 
     @Query("""
-        SELECT o FROM OrderEntity o
-        WHERE o.status = 'PENDING'
-        ORDER BY o.priority ASC, o.createdAt ASC
-        """)
+    SELECT o FROM OrderEntity o
+    WHERE (
+        o.status = 'PENDING'
+        OR o.status = 'ASSIGNED'
+        OR (o.status = 'FAILED' AND o.deliveryAttempts < 3)
+    )
+    ORDER BY o.priority ASC, o.createdAt ASC
+    """)
     List<OrderEntity> findPendingOrdersForDate(@Param("date") LocalDate date);
 
     @Query("""

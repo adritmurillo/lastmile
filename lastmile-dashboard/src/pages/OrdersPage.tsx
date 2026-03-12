@@ -12,6 +12,7 @@ const statusColors: Record<string, string> = {
   IN_TRANSIT: 'purple',
   DELIVERED: 'green',
   FAILED: 'red',
+  RETURNED: 'orange',
   CANCELLED: 'default',
 }
 
@@ -21,6 +22,7 @@ const statusLabels: Record<string, string> = {
   IN_TRANSIT: 'En tránsito',
   DELIVERED: 'Entregado',
   FAILED: 'Fallido',
+  RETURNED: 'Devuelto',
   CANCELLED: 'Cancelado',
 }
 

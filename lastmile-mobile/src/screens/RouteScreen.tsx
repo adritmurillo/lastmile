@@ -11,7 +11,7 @@ interface Props {
 
 export default function RouteScreen({ onSelectStop }: Props) {
   const {
-    route, loading, refreshing, onRefresh,
+    route, pendingStops, loading, refreshing, onRefresh,
     handleSelectStop, statusConfig,
     pendingCount, deliveredCount, progress,
     greeting, dateLabel, logout,
@@ -42,6 +42,24 @@ export default function RouteScreen({ onSelectStop }: Props) {
     )
   }
 
+  const renderPendingStop = ({ item }: { item: Stop }) => (
+    <View style={styles.overdueCard}>
+      <View style={styles.overdueLeft}>
+        <View style={styles.overdueIcon}>
+          <Text style={styles.overdueIconText}>⚠️</Text>
+        </View>
+        <View style={styles.stopContent}>
+          <Text style={styles.stopName}>{item.order.recipientName}</Text>
+          <Text style={styles.stopAddress} numberOfLines={1}>{item.order.addressText}</Text>
+          <Text style={styles.stopTracking}>{item.order.trackingCode}</Text>
+        </View>
+      </View>
+      <View style={[styles.badge, { backgroundColor: '#fff3e0' }]}>
+        <Text style={[styles.badgeText, { color: '#ff9500' }]}>Pendiente</Text>
+      </View>
+    </View>
+  )
+
   if (loading) {
     return (
       <View style={styles.center}>
@@ -64,60 +82,94 @@ export default function RouteScreen({ onSelectStop }: Props) {
         </TouchableOpacity>
       </View>
 
-      {route ? (
-        <FlatList
-          data={route.stops}
-          keyExtractor={(item) => item.id}
-          renderItem={renderStop}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007aff" />
-          }
-          ListHeaderComponent={
-            <>
-              <View style={styles.progressCard}>
-                <View style={styles.progressRow}>
-                  <Text style={styles.progressTitle}>Progreso del día</Text>
-                  <Text style={styles.progressPercent}>{progress}%</Text>
-                </View>
-                <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: `${progress}%` }]} />
-                </View>
-                <View style={styles.statsRow}>
-                  <View style={styles.statItem}>
-                    <Text style={styles.statValue}>{route.totalStops}</Text>
-                    <Text style={styles.statLabel}>Total</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={[styles.statValue, { color: '#34c759' }]}>{deliveredCount}</Text>
-                    <Text style={styles.statLabel}>Entregados</Text>
-                  </View>
-                  <View style={styles.statDivider} />
-                  <View style={styles.statItem}>
-                    <Text style={[styles.statValue, { color: '#ff9500' }]}>{pendingCount}</Text>
-                    <Text style={styles.statLabel}>Pendientes</Text>
+      <FlatList
+        data={route?.stops ?? []}
+        keyExtractor={(item) => item.id}
+        renderItem={renderStop}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#007aff" />
+        }
+        ListHeaderComponent={
+          <>
+            {/* Pendientes de días anteriores */}
+            {pendingStops.length > 0 && (
+              <>
+                <View style={styles.overdueHeader}>
+                  <Text style={styles.overdueTitle}>⚠️ Entregas pendientes</Text>
+                  <View style={styles.overdueBadge}>
+                    <Text style={styles.overdueBadgeText}>{pendingStops.length}</Text>
                   </View>
                 </View>
+                <Text style={styles.overdueSubtitle}>
+                  Tienes entregas sin completar de días anteriores. El despachador las incluirá en tu próxima ruta.
+                </Text>
+                {pendingStops.map(stop => (
+                  <View key={stop.id}>
+                    {renderPendingStop({ item: stop })}
+                  </View>
+                ))}
+                <View style={styles.divider} />
+              </>
+            )}
+
+            {/* Ruta del día */}
+            {route && (
+              <>
+                <View style={styles.progressCard}>
+                  <View style={styles.progressRow}>
+                    <Text style={styles.progressTitle}>Progreso del día</Text>
+                    <Text style={styles.progressPercent}>{progress}%</Text>
+                  </View>
+                  <View style={styles.progressBar}>
+                    <View style={[styles.progressFill, { width: `${progress}%` }]} />
+                  </View>
+                  <View style={styles.statsRow}>
+                    <View style={styles.statItem}>
+                      <Text style={styles.statValue}>{route.totalStops}</Text>
+                      <Text style={styles.statLabel}>Total</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statItem}>
+                      <Text style={[styles.statValue, { color: '#34c759' }]}>{deliveredCount}</Text>
+                      <Text style={styles.statLabel}>Entregados</Text>
+                    </View>
+                    <View style={styles.statDivider} />
+                    <View style={styles.statItem}>
+                      <Text style={[styles.statValue, { color: '#ff9500' }]}>{pendingCount}</Text>
+                      <Text style={styles.statLabel}>Pendientes</Text>
+                    </View>
+                  </View>
+                </View>
+                <Text style={styles.sectionTitle}>Paradas</Text>
+              </>
+            )}
+
+            {!route && pendingStops.length === 0 && (
+              <View style={styles.center}>
+                <Text style={styles.emptyIcon}>📦</Text>
+                <Text style={styles.emptyTitle}>Sin ruta para hoy</Text>
+                <Text style={styles.emptySubtitle}>No tienes entregas asignadas</Text>
               </View>
-              <Text style={styles.sectionTitle}>Paradas</Text>
-            </>
-          }
-        />
-      ) : (
-        <View style={styles.center}>
-          <Text style={styles.emptyIcon}>📦</Text>
-          <Text style={styles.emptyTitle}>Sin ruta para hoy</Text>
-          <Text style={styles.emptySubtitle}>No tienes entregas asignadas</Text>
-        </View>
-      )}
+            )}
+
+            {!route && pendingStops.length > 0 && (
+              <View style={styles.noPendingRoute}>
+                <Text style={styles.noPendingRouteText}>
+                  No tienes ruta asignada para hoy. Las entregas pendientes serán incluidas automáticamente.
+                </Text>
+              </View>
+            )}
+          </>
+        }
+      />
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f2f2f7' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f7' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f7', padding: 32 },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16,
@@ -127,6 +179,24 @@ const styles = StyleSheet.create({
   logoutBtn: { paddingHorizontal: 14, paddingVertical: 7, backgroundColor: '#ffeeed', borderRadius: 20 },
   logoutText: { color: '#ff3b30', fontWeight: '600', fontSize: 14 },
   listContent: { paddingHorizontal: 16, paddingBottom: 32 },
+  overdueHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
+  overdueTitle: { fontSize: 17, fontWeight: '700', color: '#ff9500', flex: 1 },
+  overdueBadge: {
+    backgroundColor: '#ff9500', borderRadius: 12,
+    paddingHorizontal: 8, paddingVertical: 2,
+  },
+  overdueBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  overdueSubtitle: { fontSize: 13, color: '#8e8e93', marginBottom: 12, lineHeight: 18 },
+  overdueCard: {
+    backgroundColor: '#fffbf5', borderRadius: 14, padding: 14, marginBottom: 8,
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    borderWidth: 1, borderColor: '#ffe0b2',
+    shadowColor: '#ff9500', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.08, shadowRadius: 4, elevation: 1,
+  },
+  overdueLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  overdueIcon: { width: 36, height: 36, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
+  overdueIconText: { fontSize: 20 },
+  divider: { height: 1, backgroundColor: '#e5e5ea', marginVertical: 20 },
   progressCard: {
     backgroundColor: '#fff', borderRadius: 16, padding: 20, marginBottom: 24,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, elevation: 2,
@@ -160,4 +230,9 @@ const styles = StyleSheet.create({
   emptyIcon: { fontSize: 52, marginBottom: 16 },
   emptyTitle: { fontSize: 20, fontWeight: '700', color: '#1c1c1e' },
   emptySubtitle: { fontSize: 15, color: '#8e8e93', marginTop: 6 },
+  noPendingRoute: {
+    backgroundColor: '#fff3e0', borderRadius: 14, padding: 16,
+    borderWidth: 1, borderColor: '#ffe0b2', marginTop: 8,
+  },
+  noPendingRouteText: { fontSize: 14, color: '#e65100', lineHeight: 20 },
 })

@@ -15,5 +15,6 @@ public interface ExecuteRouteUseCase {
     Stop registerFailedDelivery(UUID stopId, FailureReason reason, String failureNotes);
     Route completeRoute(UUID routeId);
     List<Route> getRoutesByDate(LocalDate date);
+    List<Stop> getPendingStopsFromPreviousDays(UUID courierId);
 
 }

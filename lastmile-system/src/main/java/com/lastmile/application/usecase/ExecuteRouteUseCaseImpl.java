@@ -113,4 +113,9 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
         log.info("Getting routes for date: {}", date);
         return routeRepository.findByDate(date);
     }
+
+    @Override
+    public List<Stop> getPendingStopsFromPreviousDays(UUID courierId) {
+        return routeRepository.findPendingStopsByCourier(courierId);
+    }
 }

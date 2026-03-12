@@ -1,4 +1,4 @@
-import type { Route } from '../types'
+import type { Route, Stop } from '../types'
 import apiClient from './apiClient'
 
 export const routesApi = {
@@ -20,6 +20,12 @@ export const routesApi = {
     const response = await apiClient.post<{ data: any }>(`/routes/stops/${stopId}/fail`, {
       reason,
       failureNotes
+    })
+    return response.data.data
+  },
+  getPendingStops: async (courierId: string) => {
+    const response = await apiClient.get<{ data: Stop[] }>('/routes/my-pending', {
+      params: { courierId }
     })
     return response.data.data
   }

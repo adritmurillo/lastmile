@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RestController
@@ -114,5 +115,19 @@ public class RouteExecutionController {
                         stopId, request.getReason(), request.getFailureNotes()));
 
         return ResponseEntity.ok(ApiResponse.ok(routeRestMapper.toStopResponse(stop)));
+    }
+
+    @GetMapping("/my-pending")
+    @Operation(summary = "Get courier's pending stops from previous days")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
+    public ResponseEntity<ApiResponse<List<StopResponse>>> getMyPendingStops(
+            @RequestParam UUID courierId) {
+        List<StopResponse> stops = executeRouteUseCase.getPendingStopsFromPreviousDays(courierId)
+                .stream()
+                .map(routeDomainMapper::toStopDto)
+                .map(routeRestMapper :: toStopResponse)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(ApiResponse.ok(stops));
     }
 }

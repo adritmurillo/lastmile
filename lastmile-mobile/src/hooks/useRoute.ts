@@ -10,6 +10,7 @@ dayjs.locale('es')
 export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void) {
   const { user, logout } = useAuth()
   const [route, setRoute] = useState<Route | null>(null)
+  const [pendingStops, setPendingStops] = useState<Stop[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
 
@@ -19,19 +20,31 @@ export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void) {
       setRoute(data)
     } catch {
       setRoute(null)
-    } finally {
-      setLoading(false)
-      setRefreshing(false)
     }
   }
 
+  const fetchPendingStops = async () => {
+    try {
+      const data = await routesApi.getPendingStops(user!.courierId!)
+      setPendingStops(data ?? [])
+    } catch {
+      setPendingStops([])
+    }
+  }
+
+  const fetchAll = async () => {
+    await Promise.all([fetchRoute(), fetchPendingStops()])
+    setLoading(false)
+    setRefreshing(false)
+  }
+
   useEffect(() => {
-    fetchRoute()
+    fetchAll()
   }, [])
 
   const onRefresh = () => {
     setRefreshing(true)
-    fetchRoute()
+    fetchAll()
   }
 
   const handleSelectStop = (stop: Stop) => {
@@ -54,6 +67,7 @@ export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void) {
 
   return {
     route,
+    pendingStops,
     loading,
     refreshing,
     onRefresh,

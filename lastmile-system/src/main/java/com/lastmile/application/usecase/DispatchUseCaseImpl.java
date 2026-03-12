@@ -47,8 +47,22 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
             return existingRoutes;
         }
 
-        List<Order> pendingOrders = orderRepository.findPendingForDate(date);
+        List<Order> basePendingOrders = orderRepository.findPendingForDate(date);
         List<Courier> availableCouriers = courierRepository.findAvailableToday();
+
+        List<Order> overdueOrders = availableCouriers.stream()
+                .flatMap(courier -> routeRepository.findPendingStopsByCourier(courier.getId())
+                        .stream()
+                        .map(Stop::getOrder))
+                .filter(order -> basePendingOrders.stream()
+                        .noneMatch(o -> o.getId().equals(order.getId())))
+                .toList();
+
+        List<Order> pendingOrders = new java.util.ArrayList<>(basePendingOrders);
+        if (!overdueOrders.isEmpty()) {
+            log.info("Including {} overdue orders from previous days", overdueOrders.size());
+            pendingOrders.addAll(overdueOrders);
+        }
 
         log.info("Found {} pending orders and {} available couriers",
                 pendingOrders.size(), availableCouriers.size());
@@ -122,12 +136,31 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
 
         List<Route> confirmedRoutes = proposedRoutes.stream()
                 .map(route -> {
-                    List<Order> orders = route.getStops().stream()
+                    // Resetear stops FAILED con intentos < 3 → PENDING
+                    List<Stop> resetStops = route.getStops().stream()
+                            .map(stop -> {
+                                if (stop.getStatus() == StopStatus.FAILED
+                                        && stop.getOrder().canBeRescheduled()) {
+                                    return stop.withStatus(StopStatus.PENDING);
+                                }
+                                return stop;
+                            })
+                            .collect(Collectors.toList());
+
+                    List<Stop> pendingStops = resetStops.stream()
+                            .filter(s -> s.getStatus() == StopStatus.PENDING)
+                            .collect(Collectors.toList());
+
+                    List<Stop> nonPendingStops = resetStops.stream()
+                            .filter(s -> s.getStatus() != StopStatus.PENDING)
+                            .collect(Collectors.toList());
+
+                    List<Order> pendingOrders = pendingStops.stream()
                             .map(Stop::getOrder)
                             .collect(Collectors.toList());
 
                     List<Order> optimizedOrders = routeOptimizerPort.optimizeDeliveryOrder(
-                            warehouseLatitude, warehouseLongitude, orders);
+                            warehouseLatitude, warehouseLongitude, pendingOrders);
 
                     List<Stop> optimizedStops = routeDomainService
                             .buildStopsFromOrders(optimizedOrders);
@@ -138,8 +171,11 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
 
                     orderRepository.saveAll(assignedOrders);
 
+                    List<Stop> allStops = new java.util.ArrayList<>(nonPendingStops);
+                    allStops.addAll(optimizedStops);
+
                     return routeRepository.save(route
-                            .withStops(optimizedStops)
+                            .withStops(allStops)
                             .withDate(date)
                             .withStatus(RouteStatus.CONFIRMED));
                 })
