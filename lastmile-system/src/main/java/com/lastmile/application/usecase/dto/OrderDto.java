@@ -20,6 +20,7 @@ public class OrderDto {
     private final String platformOrderNumber;
     private final String recipientName;
     private final String recipientPhone;
+    private final String recipientEmail;
     private final String addressText;
     private final Double latitude;
     private final Double longitude;

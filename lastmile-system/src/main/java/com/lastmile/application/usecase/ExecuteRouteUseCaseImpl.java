@@ -39,8 +39,14 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
         Route route = routeRepository.findById(routeId)
                 .orElseThrow(() -> new RouteNotFoundException(routeId));
 
+        if (route.getStatus() == RouteStatus.IN_PROGRESS || route.getStatus()==RouteStatus.COMPLETED){
+            log.info("Route {} already started, skipping", routeId);
+            return route;
+        }
+
         List<Order> inTransitOrders = route.getStops().stream()
                 .map(Stop::getOrder)
+                .filter(order -> order.getStatus() == OrderStatus.ASSIGNED)
                 .map(order -> order.withStatus(OrderStatus.IN_TRANSIT))
                 .collect(Collectors.toList());
 
