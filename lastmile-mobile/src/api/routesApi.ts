@@ -9,6 +9,18 @@ export const routesApi = {
     return response.data.data
   },
 
+  getPendingStops: async (courierId: string) => {
+    const response = await apiClient.get<{ data: Stop[] }>('/routes/my-pending', {
+      params: { courierId }
+    })
+    return response.data.data
+  },
+
+  startRoute: async (routeId: string) => {
+    const response = await apiClient.post<{ data: Route }>(`/routes/${routeId}/start`)
+    return response.data.data
+  },
+
   deliverStop: async (stopId: string) => {
     const response = await apiClient.post<{ data: any }>(`/routes/stops/${stopId}/deliver`, {
       proofPhotoUrl: null
@@ -20,12 +32,6 @@ export const routesApi = {
     const response = await apiClient.post<{ data: any }>(`/routes/stops/${stopId}/fail`, {
       reason,
       failureNotes
-    })
-    return response.data.data
-  },
-  getPendingStops: async (courierId: string) => {
-    const response = await apiClient.get<{ data: Stop[] }>('/routes/my-pending', {
-      params: { courierId }
     })
     return response.data.data
   }

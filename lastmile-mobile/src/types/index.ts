@@ -23,6 +23,8 @@ export interface Stop {
     weightKg: number
     priority: string
     deliveryDeadline: string
+    latitude?: number
+    longitude?: number
   }
 }
 

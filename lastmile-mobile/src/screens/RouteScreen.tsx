@@ -11,9 +11,9 @@ interface Props {
 
 export default function RouteScreen({ onSelectStop }: Props) {
   const {
-    route, pendingStops, loading, refreshing, onRefresh,
-    handleSelectStop, statusConfig,
-    pendingCount, deliveredCount, progress,
+    route, pendingStops, loading, refreshing, startingRoute, routeStarted,
+    onRefresh, handleSelectStop, handleStartRoute, openMapsWithAllStops,
+    statusConfig, pendingCount, deliveredCount, progress,
     greeting, dateLabel, logout,
   } = useRoute(onSelectStop)
 
@@ -140,7 +140,33 @@ export default function RouteScreen({ onSelectStop }: Props) {
                       <Text style={styles.statLabel}>Pendientes</Text>
                     </View>
                   </View>
+
+                  {/* Botones de acción de ruta */}
+                  <View style={styles.routeActions}>
+                    {!routeStarted ? (
+                      <TouchableOpacity
+                        style={styles.startRouteBtn}
+                        onPress={handleStartRoute}
+                        disabled={startingRoute}
+                        activeOpacity={0.85}
+                      >
+                        {startingRoute
+                          ? <ActivityIndicator color="#fff" size="small" />
+                          : <Text style={styles.startRouteBtnText}>🚀 Iniciar ruta</Text>
+                        }
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.mapsRouteBtn}
+                        onPress={() => openMapsWithAllStops(route.stops)}
+                        activeOpacity={0.85}
+                      >
+                        <Text style={styles.mapsRouteBtnText}>🗺 Ver ruta completa</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
+
                 <Text style={styles.sectionTitle}>Paradas</Text>
               </>
             )}
@@ -181,10 +207,7 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 16, paddingBottom: 32 },
   overdueHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 6 },
   overdueTitle: { fontSize: 17, fontWeight: '700', color: '#ff9500', flex: 1 },
-  overdueBadge: {
-    backgroundColor: '#ff9500', borderRadius: 12,
-    paddingHorizontal: 8, paddingVertical: 2,
-  },
+  overdueBadge: { backgroundColor: '#ff9500', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 2 },
   overdueBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
   overdueSubtitle: { fontSize: 13, color: '#8e8e93', marginBottom: 12, lineHeight: 18 },
   overdueCard: {
@@ -206,11 +229,22 @@ const styles = StyleSheet.create({
   progressPercent: { fontSize: 15, fontWeight: '700', color: '#007aff' },
   progressBar: { height: 6, backgroundColor: '#e5e5ea', borderRadius: 3, marginBottom: 16, overflow: 'hidden' },
   progressFill: { height: '100%', backgroundColor: '#007aff', borderRadius: 3 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
+  statsRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 16 },
   statItem: { alignItems: 'center', flex: 1 },
   statValue: { fontSize: 20, fontWeight: '700', color: '#1c1c1e' },
   statLabel: { fontSize: 12, color: '#8e8e93', marginTop: 2 },
   statDivider: { width: StyleSheet.hairlineWidth, backgroundColor: '#e5e5ea' },
+  routeActions: { gap: 8 },
+  startRouteBtn: {
+    backgroundColor: '#007aff', borderRadius: 12, paddingVertical: 13, alignItems: 'center',
+    shadowColor: '#007aff', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.25, shadowRadius: 6, elevation: 3,
+  },
+  startRouteBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  mapsRouteBtn: {
+    backgroundColor: '#f2f2f7', borderRadius: 12, paddingVertical: 13, alignItems: 'center',
+    borderWidth: 1, borderColor: '#e5e5ea',
+  },
+  mapsRouteBtnText: { color: '#1c1c1e', fontSize: 16, fontWeight: '600' },
   sectionTitle: { fontSize: 20, fontWeight: '700', color: '#1c1c1e', marginBottom: 12, letterSpacing: -0.3 },
   stopCard: {
     backgroundColor: '#fff', borderRadius: 14, padding: 14, marginBottom: 8,

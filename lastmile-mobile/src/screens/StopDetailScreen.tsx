@@ -19,7 +19,7 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
   const {
     loading, failModalOpen, selectedReason, setSelectedReason,
     failureNotes, setFailureNotes,
-    handleDeliver, handleFail, handleCall, handleMaps,
+    handleDeliver, handleFail, handleCall, handleWhatsApp, handleMaps,
     openFailModal, closeFailModal,
   } = useStopDetail(stop, onComplete)
 
@@ -39,29 +39,26 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+
+        {/* Destinatario */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>DESTINATARIO</Text>
           <Text style={styles.recipientName}>{stop.order.recipientName}</Text>
           <Text style={styles.tracking}>{stop.order.trackingCode}</Text>
         </View>
 
+        {/* Dirección */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>DIRECCIÓN</Text>
           <Text style={styles.address}>{stop.order.addressText}</Text>
           <TouchableOpacity style={styles.mapsBtn} onPress={handleMaps}>
-            <Text style={styles.mapsBtnText}>📍 Abrir en Mapas</Text>
+            <Text style={styles.mapsBtnText}>📍 Navegar</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Info */}
         <View style={styles.card}>
           <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Teléfono</Text>
-              <TouchableOpacity onPress={handleCall}>
-                <Text style={styles.infoValueLink}>{stop.order.recipientPhone}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.infoDivider} />
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Prioridad</Text>
               <Text style={[styles.infoValue, { color: stop.order.priority === 'EXPRESS' ? '#ff3b30' : '#007aff' }]}>
@@ -76,6 +73,23 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
           </View>
         </View>
 
+        {/* Contacto */}
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>CONTACTAR</Text>
+          <Text style={styles.phoneText}>{stop.order.recipientPhone}</Text>
+          <View style={styles.contactRow}>
+            <TouchableOpacity style={styles.contactBtn} onPress={handleCall} activeOpacity={0.7}>
+              <Text style={styles.contactBtnEmoji}>📞</Text>
+              <Text style={styles.contactBtnText}>Llamar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.contactBtn, styles.whatsappBtn]} onPress={handleWhatsApp} activeOpacity={0.7}>
+              <Text style={styles.contactBtnEmoji}>💬</Text>
+              <Text style={[styles.contactBtnText, styles.whatsappText]}>WhatsApp</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Acciones */}
         <View style={styles.actions}>
           <TouchableOpacity style={styles.deliverBtn} onPress={handleDeliver} disabled={loading} activeOpacity={0.85}>
             {loading
@@ -90,19 +104,13 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
       </ScrollView>
 
       <Modal visible={failModalOpen} transparent animationType="slide">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
               <Text style={styles.modalTitle}>¿Por qué falló la entrega?</Text>
               <Text style={styles.modalSubtitle}>Selecciona el motivo</Text>
 
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-              >
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 <View style={styles.reasonsContainer}>
                   {FAILURE_REASONS.map(({ key, label, emoji }) => (
                     <TouchableOpacity
@@ -182,8 +190,17 @@ const styles = StyleSheet.create({
   infoItem: { alignItems: 'center', flex: 1 },
   infoLabel: { fontSize: 11, color: '#8e8e93', marginBottom: 4, fontWeight: '500' },
   infoValue: { fontSize: 15, fontWeight: '600', color: '#1c1c1e' },
-  infoValueLink: { fontSize: 15, fontWeight: '600', color: '#007aff' },
   infoDivider: { width: StyleSheet.hairlineWidth, backgroundColor: '#e5e5ea' },
+  phoneText: { fontSize: 17, fontWeight: '600', color: '#1c1c1e', marginBottom: 12 },
+  contactRow: { flexDirection: 'row', gap: 10 },
+  contactBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, backgroundColor: '#f2f2f7', borderRadius: 12, paddingVertical: 12,
+  },
+  whatsappBtn: { backgroundColor: '#e8f8ed' },
+  contactBtnEmoji: { fontSize: 18 },
+  contactBtnText: { fontSize: 15, fontWeight: '600', color: '#007aff' },
+  whatsappText: { color: '#34c759' },
   actions: { gap: 10, marginTop: 8 },
   deliverBtn: {
     backgroundColor: '#34c759', borderRadius: 14, paddingVertical: 16, alignItems: 'center',
