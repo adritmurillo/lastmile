@@ -76,7 +76,24 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
         log.info("Order {} successfully delivered at stop {}",
                 stop.getOrder().getTrackingCode(), stopId);
 
-        return routeRepository.saveStop(delivered);
+        Stop savedStop = routeRepository.saveStop(delivered);
+
+        routeRepository.findById(stop.getRouteId()).ifPresent(route -> {
+            boolean allDone = route.getStops().stream()
+                    .allMatch(s -> s.getId().equals(stopId)
+                            ? true
+                            : s.getStatus() != StopStatus.PENDING);
+
+            if (allDone) {
+                Route completed = route
+                        .withStatus(RouteStatus.COMPLETED)
+                        .withCompletedAt(LocalDateTime.now());
+                routeRepository.save(completed);
+                log.info("Route {} auto-completed. All stops finished.", route.getId());
+            }
+        });
+
+        return savedStop;
     }
 
     @Override
