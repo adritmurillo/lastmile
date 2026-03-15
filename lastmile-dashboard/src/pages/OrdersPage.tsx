@@ -269,6 +269,7 @@ export default function OrdersPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div><strong>Destinatario:</strong> {selectedOrder.recipientName}</div>
             <div><strong>Teléfono:</strong> {selectedOrder.recipientPhone}</div>
+            <div><strong>Email:</strong> {selectedOrder.recipientEmail ?? '—'}</div>
             <div><strong>Dirección:</strong> {selectedOrder.addressText}</div>
             <div><strong>Peso:</strong> {selectedOrder.weightKg} kg</div>
             <div><strong>Volumen:</strong> {selectedOrder.volumeCm3} cm³</div>
