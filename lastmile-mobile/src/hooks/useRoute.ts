@@ -164,6 +164,8 @@ export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void) {
   const greeting = user?.username ?? ''
   const dateLabel = dayjs().format('dddd D [de] MMMM')
   const routeStarted = route?.status === 'IN_PROGRESS'
+  const routeCompleted = route?.status === 'COMPLETED'
+
 
   return {
     route,
@@ -172,6 +174,7 @@ export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void) {
     refreshing,
     startingRoute,
     routeStarted,
+    routeCompleted,
     onRefresh,
     handleSelectStop,
     handleStartRoute,
@@ -183,5 +186,6 @@ export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void) {
     greeting,
     dateLabel,
     logout,
+    
   }
 }

@@ -12,7 +12,7 @@ interface Props {
 export default function RouteScreen({ onSelectStop }: Props) {
   const {
     route, pendingStops, loading, refreshing, startingRoute, routeStarted,
-    onRefresh, handleSelectStop, handleStartRoute, openMapsWithAllStops,
+    routeCompleted, onRefresh, handleSelectStop, handleStartRoute, openMapsWithAllStops,
     statusConfig, pendingCount, deliveredCount, progress,
     greeting, dateLabel, logout,
   } = useRoute(onSelectStop)
@@ -143,7 +143,16 @@ export default function RouteScreen({ onSelectStop }: Props) {
 
                   {/* Botones de acción de ruta */}
                   <View style={styles.routeActions}>
-                    {!routeStarted ? (
+                    {routeCompleted ? (
+                      <View style={styles.completedBanner}>
+                        <Text style={styles.completedBannerText}>
+                          🎉 ¡Ruta completada! Buen trabajo.
+                        </Text>
+                        <Text style={styles.completedBannerSub}>
+                          Espera a que el despachador genere nuevas rutas.
+                        </Text>
+                      </View>
+                    ) : !routeStarted ? (
                       <TouchableOpacity
                         style={styles.startRouteBtn}
                         onPress={handleStartRoute}
@@ -269,4 +278,23 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#ffe0b2', marginTop: 8,
   },
   noPendingRouteText: { fontSize: 14, color: '#e65100', lineHeight: 20 },
+  completedBanner: {
+  backgroundColor: '#e8f8ed',
+  borderRadius: 12,
+  padding: 14,
+  alignItems: 'center',
+  borderWidth: 1,
+  borderColor: '#34c759',
+},
+completedBannerText: {
+  fontSize: 16,
+  fontWeight: '700',
+  color: '#34c759',
+  marginBottom: 4,
+},
+completedBannerSub: {
+  fontSize: 13,
+  color: '#8e8e93',
+  textAlign: 'center',
+},
 })
