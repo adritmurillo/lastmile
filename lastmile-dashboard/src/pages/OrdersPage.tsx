@@ -37,6 +37,7 @@ export default function OrdersPage() {
   const allOrdersRef = useRef<Order[]>([])
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [proofPhotoUrl, setProofPhotoUrl] = useState<string | null>(null)
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -61,6 +62,22 @@ export default function OrdersPage() {
     setModalOpen(false)
     form.resetFields()
     fetchOrders()
+  }
+
+  const handleViewOrder = async (order: Order) => {
+    setSelectedOrder(order)
+    setDetailModalOpen(true)
+
+    if (order.status === 'DELIVERED') {
+      try {
+        const res = await ordersApi.getProofPhoto(order.id)
+        setProofPhotoUrl(res.data ?? null)
+      } catch {
+        setProofPhotoUrl(null)
+      }
+    } else {
+      setProofPhotoUrl(null)
+    }
   }
 
   const columns: ColumnsType<Order> = [
@@ -110,10 +127,7 @@ export default function OrdersPage() {
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Button size="small" onClick={() => {
-            setSelectedOrder(record)
-            setDetailModalOpen(true)
-          }}>Ver</Button>
+          <Button size="small" onClick={() => handleViewOrder(record)}>Ver</Button>
           {record.status !== 'DELIVERED' && record.status !== 'CANCELLED' && (
             <Button size="small" danger onClick={async () => {
               try {
@@ -278,6 +292,16 @@ export default function OrdersPage() {
             <div><strong>Intentos:</strong> {selectedOrder.deliveryAttempts}/3</div>
             <div><strong>Fecha límite:</strong> {dayjs(selectedOrder.deliveryDeadline).format('DD/MM/YYYY')}</div>
             <div><strong>Creado:</strong> {dayjs(selectedOrder.createdAt).format('DD/MM/YYYY HH:mm')}</div>
+            {proofPhotoUrl && (
+              <div>
+                <strong>Foto de entrega:</strong>
+                <img
+                  src={proofPhotoUrl}
+                  alt="Foto de entrega"
+                  style={{ width: '100%', borderRadius: 8, marginTop: 8 }}
+                />
+              </div>
+            )}
           </div>
         )}
       </Modal>

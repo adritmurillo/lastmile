@@ -88,4 +88,5 @@ export interface Stop {
   order: Order
   stopOrder: number
   status: 'PENDING' | 'DELIVERED' | 'FAILED'
+  proofPhotoUrl?: string
 }

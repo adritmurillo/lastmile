@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
-import { Card, Table, Tag, DatePicker, Button, Input } from 'antd'
-import { ReloadOutlined } from '@ant-design/icons'
+import { Card, Table, Tag, DatePicker, Button, Input, Image, Modal } from 'antd'
+import { ReloadOutlined, CameraOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { routesApi } from '../api/routesApi'
@@ -26,13 +26,18 @@ const stopStatusColors: Record<string, string> = {
   FAILED: 'red',
 }
 
+const stopStatusLabels: Record<string, string> = {
+  PENDING: 'PENDING',
+  DELIVERED: 'DELIVERED',
+  FAILED: 'FAILED',
+}
+
 export default function RoutesPage() {
   const [routes, setRoutes] = useState<Route[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'))
+  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
   const allRoutesRef = useRef<Route[]>([])
-
-
 
   const fetchRoutes = async () => {
     setLoading(true)
@@ -61,6 +66,21 @@ export default function RoutesPage() {
         key: 'status',
         render: (s) => <Tag color={stopStatusColors[s]}>{s}</Tag>,
       },
+      {
+        title: 'Foto',
+        key: 'photo',
+        render: (_, stop) => stop.proofPhotoUrl ? (
+          <Button
+            size="small"
+            icon={<CameraOutlined />}
+            onClick={() => setPreviewPhoto(stop.proofPhotoUrl!)}
+          >
+            Ver foto
+          </Button>
+        ) : (
+          <span style={{ color: '#bfbfbf', fontSize: 12 }}>Sin foto</span>
+        )
+      },
     ]
     return (
       <Table
@@ -74,16 +94,8 @@ export default function RoutesPage() {
   }
 
   const columns: ColumnsType<Route> = [
-    {
-      title: 'Courier',
-      dataIndex: ['courier', 'fullName'],
-      key: 'courier',
-    },
-    {
-      title: 'Vehículo',
-      dataIndex: ['courier', 'vehicle', 'licensePlate'],
-      key: 'vehicle',
-    },
+    { title: 'Courier', dataIndex: ['courier', 'fullName'], key: 'courier' },
+    { title: 'Vehículo', dataIndex: ['courier', 'vehicle', 'licensePlate'], key: 'vehicle' },
     {
       title: 'Estado',
       dataIndex: 'status',
@@ -108,11 +120,7 @@ export default function RoutesPage() {
     <div>
       <Card
         title="Rutas"
-        extra={
-          <Button icon={<ReloadOutlined />} onClick={fetchRoutes}>
-            Actualizar
-          </Button>
-        }
+        extra={<Button icon={<ReloadOutlined />} onClick={fetchRoutes}>Actualizar</Button>}
       >
         <DatePicker
           value={dayjs(selectedDate)}
@@ -120,7 +128,6 @@ export default function RoutesPage() {
           format="YYYY-MM-DD"
           style={{ marginBottom: 16 }}
         />
-
         <Input.Search
           placeholder="Buscar por nombre de courier..."
           style={{ marginBottom: 16, marginLeft: 16, width: 300 }}
@@ -146,6 +153,22 @@ export default function RoutesPage() {
           pagination={false}
         />
       </Card>
+
+      <Modal
+        open={!!previewPhoto}
+        onCancel={() => setPreviewPhoto(null)}
+        footer={null}
+        title="Foto de entrega"
+        centered
+      >
+        {previewPhoto && (
+          <Image
+            src={previewPhoto}
+            style={{ width: '100%', borderRadius: 8 }}
+            preview={false}
+          />
+        )}
+      </Modal>
     </div>
   )
 }
