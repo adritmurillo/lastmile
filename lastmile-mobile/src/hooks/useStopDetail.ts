@@ -1,3 +1,4 @@
+import * as ImagePicker from 'expo-image-picker'
 import { useState } from 'react'
 import { Alert, Linking, Platform } from 'react-native'
 import { routesApi } from '../api/routesApi'
@@ -6,11 +7,11 @@ import type { Stop } from '../types'
 export type FailureReason = 'NOBODY_HOME' | 'INCORRECT_ADDRESS' | 'CUSTOMER_REJECTED' | 'INACCESSIBLE_AREA' | 'OTHER'
 
 export const FAILURE_REASONS: { key: FailureReason; label: string; emoji: string }[] = [
-  { key: 'NOBODY_HOME', label: 'Nadie en casa', emoji: '🏠' },
-  { key: 'INCORRECT_ADDRESS', label: 'Dirección incorrecta', emoji: '📍' },
-  { key: 'CUSTOMER_REJECTED', label: 'Cliente rechazó', emoji: '🚫' },
-  { key: 'INACCESSIBLE_AREA', label: 'Zona inaccesible', emoji: '🚧' },
-  { key: 'OTHER', label: 'Otro motivo', emoji: '📝' },
+  { key: 'NOBODY_HOME',        label: 'Nadie en casa',        emoji: '🏠' },
+  { key: 'INCORRECT_ADDRESS',  label: 'Dirección incorrecta', emoji: '📍' },
+  { key: 'CUSTOMER_REJECTED',  label: 'Cliente rechazó',      emoji: '🚫' },
+  { key: 'INACCESSIBLE_AREA',  label: 'Zona inaccesible',     emoji: '🚧' },
+  { key: 'OTHER',              label: 'Otro motivo',          emoji: '📝' },
 ]
 
 export function useStopDetail(stop: Stop, onComplete: () => void) {
@@ -18,6 +19,26 @@ export function useStopDetail(stop: Stop, onComplete: () => void) {
   const [failModalOpen, setFailModalOpen] = useState(false)
   const [selectedReason, setSelectedReason] = useState<FailureReason | null>(null)
   const [failureNotes, setFailureNotes] = useState('')
+  const [photoUri, setPhotoUri] = useState<string | null>(null)
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+
+  const handleTakePhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync()
+    if (!permission.granted) {
+      Alert.alert('Permiso requerido', 'Necesitamos acceso a tu cámara para tomar la foto de entrega')
+      return
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.7,
+      allowsEditing: false,
+    })
+
+    if (!result.canceled && result.assets[0]) {
+      setPhotoUri(result.assets[0].uri)
+    }
+  }
 
   const handleDeliver = () => {
     Alert.alert(
@@ -30,12 +51,21 @@ export function useStopDetail(stop: Stop, onComplete: () => void) {
           onPress: async () => {
             setLoading(true)
             try {
-              await routesApi.deliverStop(stop.id)
+              let proofPhotoUrl: string | null = null
+
+              if (photoUri) {
+                setUploadingPhoto(true)
+                proofPhotoUrl = await routesApi.uploadDeliveryPhoto(photoUri)
+                setUploadingPhoto(false)
+              }
+
+              await routesApi.deliverStop(stop.id, proofPhotoUrl)
               onComplete()
             } catch {
               Alert.alert('Error', 'No se pudo registrar la entrega')
             } finally {
               setLoading(false)
+              setUploadingPhoto(false)
             }
           }
         }
@@ -66,9 +96,7 @@ export function useStopDetail(stop: Stop, onComplete: () => void) {
     }
   }
 
-  const handleCall = () => {
-    Linking.openURL(`tel:${stop.order.recipientPhone}`)
-  }
+  const handleCall = () => Linking.openURL(`tel:${stop.order.recipientPhone}`)
 
   const handleWhatsApp = () => {
     const raw = stop.order.recipientPhone.replace(/\D/g, '')
@@ -138,6 +166,8 @@ export function useStopDetail(stop: Stop, onComplete: () => void) {
 
   return {
     loading,
+    uploadingPhoto,
+    photoUri,
     failModalOpen,
     selectedReason,
     setSelectedReason,
@@ -148,6 +178,7 @@ export function useStopDetail(stop: Stop, onComplete: () => void) {
     handleCall,
     handleWhatsApp,
     handleMaps,
+    handleTakePhoto,
     openFailModal,
     closeFailModal,
   }

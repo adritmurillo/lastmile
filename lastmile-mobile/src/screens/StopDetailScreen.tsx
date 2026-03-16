@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Modal, Platform, SafeAreaView,
   ScrollView, StatusBar, StyleSheet, Text, TextInput,
@@ -17,9 +18,9 @@ interface Props {
 
 export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: Props) {
   const {
-    loading, failModalOpen, selectedReason, setSelectedReason,
+    loading, uploadingPhoto, photoUri, failModalOpen, selectedReason, setSelectedReason,
     failureNotes, setFailureNotes,
-    handleDeliver, handleFail, handleCall, handleWhatsApp, handleMaps,
+    handleDeliver, handleFail, handleCall, handleWhatsApp, handleMaps, handleTakePhoto,
     openFailModal, closeFailModal,
   } = useStopDetail(stop, onComplete)
 
@@ -89,12 +90,37 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
           </View>
         </View>
 
+        {/* Foto de entrega */}
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>FOTO DE ENTREGA</Text>
+          {photoUri ? (
+            <View>
+              <Image
+                source={{ uri: photoUri }}
+                style={styles.photoPreview}
+                resizeMode="cover"
+              />
+              <TouchableOpacity style={styles.retakeBtn} onPress={handleTakePhoto}>
+                <Text style={styles.retakeBtnText}>📷 Tomar otra foto</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto} activeOpacity={0.7}>
+              <Text style={styles.photoBtnEmoji}>📷</Text>
+              <Text style={styles.photoBtnText}>Tomar foto de entrega</Text>
+              <Text style={styles.photoBtnSub}>Opcional pero recomendado</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Acciones */}
         <View style={styles.actions}>
           <TouchableOpacity style={styles.deliverBtn} onPress={handleDeliver} disabled={loading} activeOpacity={0.85}>
             {loading
               ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.deliverBtnText}>✓ Entrega exitosa</Text>
+              : <Text style={styles.deliverBtnText}>
+                  {uploadingPhoto ? '⬆️ Subiendo foto...' : '✓ Entrega exitosa'}
+                </Text>
             }
           </TouchableOpacity>
           <TouchableOpacity style={styles.failBtn} onPress={openFailModal} disabled={loading} activeOpacity={0.85}>
@@ -186,6 +212,20 @@ const styles = StyleSheet.create({
   address: { fontSize: 16, color: '#1c1c1e', lineHeight: 22, marginBottom: 12 },
   mapsBtn: { backgroundColor: '#f2f2f7', borderRadius: 10, padding: 10, alignItems: 'center' },
   mapsBtnText: { fontSize: 14, color: '#007aff', fontWeight: '500' },
+  photoPreview: {
+    width: '100%', height: 200, borderRadius: 12, marginBottom: 10,
+  },
+  retakeBtn: {
+    backgroundColor: '#f2f2f7', borderRadius: 10, padding: 10, alignItems: 'center',
+  },
+  retakeBtnText: { fontSize: 14, color: '#007aff', fontWeight: '500' },
+  photoBtn: {
+    backgroundColor: '#f2f2f7', borderRadius: 12, padding: 20,
+    alignItems: 'center', gap: 4,
+  },
+  photoBtnEmoji: { fontSize: 32, marginBottom: 4 },
+  photoBtnText: { fontSize: 15, fontWeight: '600', color: '#1c1c1e' },
+  photoBtnSub: { fontSize: 13, color: '#8e8e93' },
   infoRow: { flexDirection: 'row', justifyContent: 'space-around' },
   infoItem: { alignItems: 'center', flex: 1 },
   infoLabel: { fontSize: 11, color: '#8e8e93', marginBottom: 4, fontWeight: '500' },
