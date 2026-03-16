@@ -1,6 +1,7 @@
 package com.lastmile.infrastructure.adapter.out.notification.template;
 
 import com.lastmile.domain.model.Order;
+import com.lastmile.domain.model.Stop;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -10,7 +11,16 @@ public class OrderDeliveredEmailTemplate {
         return "🎉 ¡Pedido entregado! — " + order.getTrackingCode();
     }
 
-    public String build(Order order) {
+    public String build(Order order, Stop stop) {
+        String photoSection = stop.getProofPhotoUrl() != null ? """
+        <tr>
+          <td style="padding:16px 40px;">
+            <div style="font-size:11px;color:#999;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px;text-align:center;">📷 Foto de entrega</div>
+            <img src="%s" alt="Foto de entrega" style="width:100%%;border-radius:8px;border:1px solid #dcfce7;" />
+          </td>
+        </tr>
+        """.formatted(stop.getProofPhotoUrl()) : "";
+
         return """
         <!DOCTYPE html>
         <html lang="es">
@@ -72,6 +82,9 @@ public class OrderDeliveredEmailTemplate {
                   </td>
                 </tr>
 
+                <!-- PROOF PHOTO -->
+                %s
+
                 <!-- THANK YOU -->
                 <tr>
                   <td style="padding:24px 40px 32px;text-align:center;">
@@ -95,7 +108,8 @@ public class OrderDeliveredEmailTemplate {
         """.formatted(
                 order.getTrackingCode(),
                 order.getRecipientName(),
-                order.getAddressText()
+                order.getAddressText(),
+                photoSection
         );
     }
 }

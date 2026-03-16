@@ -42,10 +42,11 @@ public class EmailNotificationAdapter implements NotificationPort {
 
     @Async
     @Override
-    public void notifyOrderDelivered(Order order) {
+    public void notifyOrderDelivered(Order order, Stop stop) {
         byte[] pdf = voucherPdfGenerator.generate(order);
         String filename = "comprobante-" + order.getTrackingCode() + ".pdf";
-        sendHtml(order, orderDeliveredTemplate.subject(order), orderDeliveredTemplate.build(order), pdf, filename);
+        sendHtml(order, orderDeliveredTemplate.subject(order),
+                orderDeliveredTemplate.build(order, stop), pdf, filename);
     }
 
     @Async

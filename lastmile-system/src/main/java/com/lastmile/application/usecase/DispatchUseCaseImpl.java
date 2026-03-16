@@ -135,8 +135,8 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
         List<Route> proposedRoutes = routeRepository.findByDate(date);
 
         List<Route> confirmedRoutes = proposedRoutes.stream()
+                .filter(route -> route.getStatus() != RouteStatus.COMPLETED && route.getStatus() != RouteStatus.IN_PROGRESS)
                 .map(route -> {
-                    // Resetear stops FAILED con intentos < 3 → PENDING
                     List<Stop> resetStops = route.getStops().stream()
                             .map(stop -> {
                                 if (stop.getStatus() == StopStatus.FAILED

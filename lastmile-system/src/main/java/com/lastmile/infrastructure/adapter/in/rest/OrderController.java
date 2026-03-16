@@ -162,7 +162,6 @@ public class OrderController {
 
     @GetMapping("/proof-photo/{id}")
     @Operation(summary = "Get proof photo URL for a delivered order")
-    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
     public ResponseEntity<ApiResponse<String>> getProofPhoto(@PathVariable UUID id) {
         String url = manageOrdersUseCase.getProofPhotoUrl(id).orElse(null);
         return ResponseEntity.ok(ApiResponse.ok(url));

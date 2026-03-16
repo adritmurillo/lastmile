@@ -71,7 +71,7 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
 
         Order deliveredOrder = stop.getOrder().markAsDelivered();
         orderRepository.save(deliveredOrder);
-        notificationPort.notifyOrderDelivered(deliveredOrder);
+        notificationPort.notifyOrderDelivered(deliveredOrder, delivered);
 
         log.info("Order {} successfully delivered at stop {}",
                 stop.getOrder().getTrackingCode(), stopId);
