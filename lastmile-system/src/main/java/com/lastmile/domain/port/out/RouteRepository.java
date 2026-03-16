@@ -18,4 +18,5 @@ public interface RouteRepository {
     Optional<Route> findRouteByOrderId(UUID orderId);
     List<Route> findByDateRange(LocalDate startDate, LocalDate endDate);
     List<Stop> findPendingStopsByCourier(UUID courierId);
+    List<Route> findRoutesByOrderId(UUID orderId);
 }

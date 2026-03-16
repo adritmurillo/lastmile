@@ -17,4 +17,5 @@ public interface ManageOrdersUseCase {
     int rescheduleFailedOrders();
     Order createOrder(Order order);
     Order cancelOrder(UUID orderId);
+    Optional<String> getProofPhotoUrl(UUID orderId);
 }

@@ -74,7 +74,7 @@ public class RouteRepositoryImpl implements RouteRepository {
 
     @Override
     public Optional<Route> findRouteByOrderId(UUID orderId) {
-        return routeJpaRepository.findByOrderId(orderId).map(routeMapper::toDomain);
+        return routeJpaRepository.findByOrderId(orderId).stream().findFirst().map(routeMapper :: toDomain);
     }
 
     @Override
@@ -90,5 +90,10 @@ public class RouteRepositoryImpl implements RouteRepository {
                 .stream()
                 .map(stopMapper :: toDomain)
                 .toList();
+    }
+
+    @Override
+    public List<Route> findRoutesByOrderId(UUID orderId) {
+        return routeMapper.toDomainList(routeJpaRepository.findByOrderId(orderId));
     }
 }

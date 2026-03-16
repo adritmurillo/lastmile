@@ -121,4 +121,14 @@ public class ManageOrdersUseCaseImpl implements ManageOrdersUseCase {
 
         return saved;
     }
+
+    @Override
+    public Optional<String> getProofPhotoUrl(UUID orderId) {
+        return routeRepository.findRoutesByOrderId(orderId).stream()
+                .flatMap(route -> route.getStops().stream())
+                .filter(stop -> stop.getOrder().getId().equals(orderId)
+                        && stop.getProofPhotoUrl() != null)
+                .map(Stop::getProofPhotoUrl)
+                .findFirst();
+    }
 }
