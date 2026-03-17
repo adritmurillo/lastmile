@@ -7,6 +7,7 @@ import com.lastmile.infrastructure.adapter.out.notification.template.OrderCreate
 import com.lastmile.infrastructure.adapter.out.notification.template.OrderDeliveredEmailTemplate;
 import com.lastmile.infrastructure.adapter.out.notification.template.OrderFailedEmailTemplate;
 import com.lastmile.infrastructure.adapter.out.notification.template.OrderInTransitEmailTemplate;
+import com.lastmile.infrastructure.adapter.out.persistence.repository.StopPhotoJpaRepository;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.util.ByteArrayDataSource;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,8 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
 
 @Slf4j
 @Component
@@ -27,6 +30,8 @@ public class EmailNotificationAdapter implements NotificationPort {
     private final OrderDeliveredEmailTemplate orderDeliveredTemplate;
     private final OrderFailedEmailTemplate orderFailedTemplate;
     private final DeliveryVoucherPdfGenerator voucherPdfGenerator;
+    private final StopPhotoJpaRepository stopPhotoJpaRepository;
+
 
     @Async
     @Override
@@ -45,8 +50,13 @@ public class EmailNotificationAdapter implements NotificationPort {
     public void notifyOrderDelivered(Order order, Stop stop) {
         byte[] pdf = voucherPdfGenerator.generate(order);
         String filename = "comprobante-" + order.getTrackingCode() + ".pdf";
+        List<String> photoUrls = stopPhotoJpaRepository
+                .findByStopIdOrderByPhotoOrderAsc(stop.getId())
+                .stream()
+                .map(photo -> photo.getPhotoUrl())
+                .toList();
         sendHtml(order, orderDeliveredTemplate.subject(order),
-                orderDeliveredTemplate.build(order, stop), pdf, filename);
+                orderDeliveredTemplate.build(order, stop, photoUrls), pdf, filename);
     }
 
     @Async

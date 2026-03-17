@@ -243,24 +243,28 @@
             const priority = PRIORITY_CONFIG[order.priority] || PRIORITY_CONFIG.STANDARD;
 
             // Buscar foto si está entregado
-            let proofPhotoUrl = null;
-            if (order.status === 'DELIVERED') {
-                try {
-                    const photoRes = await fetch(`http://localhost:8080/api/v1/orders/proof-photo/${order.id}`);
-                    const photoJson = await photoRes.json();
-                    proofPhotoUrl = photoJson.data ?? null;
-                } catch { }
-            }
+            let proofPhotoUrls = [];
+if (order.status === 'DELIVERED') {
+    try {
+        const photoRes = await fetch(`http://localhost:8080/api/v1/orders/proof-photos/${order.id}`);
+        const photoJson = await photoRes.json();
+        proofPhotoUrls = photoJson.data ?? [];
+    } catch { }
+}
 
-            const photoSection = proofPhotoUrl ? `
-                <div style="margin-bottom:24px;">
-                    <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">📷 Foto de entrega</div>
-                    <img src="${proofPhotoUrl}" alt="Foto de entrega"
-                         style="width:100%;border-radius:8px;border:1px solid #e0e0e0;cursor:pointer;"
-                         onclick="window.open('${proofPhotoUrl}', '_blank')" />
-                    <div style="font-size:11px;color:#999;margin-top:6px;text-align:center;">Haz clic en la foto para ampliar</div>
-                </div>
-            ` : '';
+const photoSection = proofPhotoUrls.length > 0 ? `
+    <div style="margin-bottom:24px;">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
+            📷 Fotos de entrega (${proofPhotoUrls.length})
+        </div>
+        ${proofPhotoUrls.map((url, i) => `
+            <img src="${url}" alt="Foto ${i+1}"
+                 style="width:100%;border-radius:8px;border:1px solid #e0e0e0;cursor:pointer;margin-bottom:8px;"
+                 onclick="window.open('${url}', '_blank')" />
+        `).join('')}
+        <div style="font-size:11px;color:#999;margin-top:4px;text-align:center;">Haz clic en cada foto para ampliar</div>
+    </div>
+` : '';
 
             const card = document.getElementById('resultCard');
             card.style.display = 'block';

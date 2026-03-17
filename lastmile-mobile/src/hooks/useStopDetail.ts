@@ -7,11 +7,11 @@ import type { Stop } from '../types'
 export type FailureReason = 'NOBODY_HOME' | 'INCORRECT_ADDRESS' | 'CUSTOMER_REJECTED' | 'INACCESSIBLE_AREA' | 'OTHER'
 
 export const FAILURE_REASONS: { key: FailureReason; label: string; emoji: string }[] = [
-  { key: 'NOBODY_HOME',        label: 'Nadie en casa',        emoji: '🏠' },
-  { key: 'INCORRECT_ADDRESS',  label: 'Dirección incorrecta', emoji: '📍' },
-  { key: 'CUSTOMER_REJECTED',  label: 'Cliente rechazó',      emoji: '🚫' },
-  { key: 'INACCESSIBLE_AREA',  label: 'Zona inaccesible',     emoji: '🚧' },
-  { key: 'OTHER',              label: 'Otro motivo',          emoji: '📝' },
+  { key: 'NOBODY_HOME', label: 'Nadie en casa', emoji: '🏠' },
+  { key: 'INCORRECT_ADDRESS', label: 'Dirección incorrecta', emoji: '📍' },
+  { key: 'CUSTOMER_REJECTED', label: 'Cliente rechazó', emoji: '🚫' },
+  { key: 'INACCESSIBLE_AREA', label: 'Zona inaccesible', emoji: '🚧' },
+  { key: 'OTHER', label: 'Otro motivo', emoji: '📝' },
 ]
 
 export function useStopDetail(stop: Stop, onComplete: () => void) {
@@ -19,7 +19,7 @@ export function useStopDetail(stop: Stop, onComplete: () => void) {
   const [failModalOpen, setFailModalOpen] = useState(false)
   const [selectedReason, setSelectedReason] = useState<FailureReason | null>(null)
   const [failureNotes, setFailureNotes] = useState('')
-  const [photoUri, setPhotoUri] = useState<string | null>(null)
+  const [photoUris, setPhotoUris] = useState<string[]>([])
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
   const handleTakePhoto = async () => {
@@ -36,8 +36,12 @@ export function useStopDetail(stop: Stop, onComplete: () => void) {
     })
 
     if (!result.canceled && result.assets[0]) {
-      setPhotoUri(result.assets[0].uri)
+      setPhotoUris(prev => [...prev, result.assets[0].uri])
     }
+  }
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotoUris(prev => prev.filter((_, i) => i !== index))
   }
 
   const handleDeliver = () => {
@@ -51,15 +55,17 @@ export function useStopDetail(stop: Stop, onComplete: () => void) {
           onPress: async () => {
             setLoading(true)
             try {
-              let proofPhotoUrl: string | null = null
+              let uploadedUrls: string[] = []
 
-              if (photoUri) {
+              if (photoUris.length > 0) {
                 setUploadingPhoto(true)
-                proofPhotoUrl = await routesApi.uploadDeliveryPhoto(photoUri)
+                uploadedUrls = await Promise.all(
+                  photoUris.map(uri => routesApi.uploadDeliveryPhoto(uri))
+                )
                 setUploadingPhoto(false)
               }
 
-              await routesApi.deliverStop(stop.id, proofPhotoUrl)
+              await routesApi.deliverStop(stop.id, uploadedUrls)
               onComplete()
             } catch {
               Alert.alert('Error', 'No se pudo registrar la entrega')
@@ -167,7 +173,8 @@ export function useStopDetail(stop: Stop, onComplete: () => void) {
   return {
     loading,
     uploadingPhoto,
-    photoUri,
+    handleRemovePhoto,
+    photoUris,
     failModalOpen,
     selectedReason,
     setSelectedReason,

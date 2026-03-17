@@ -37,7 +37,7 @@ export default function OrdersPage() {
   const allOrdersRef = useRef<Order[]>([])
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [proofPhotoUrl, setProofPhotoUrl] = useState<string | null>(null)
+  const [proofPhotoUrls, setProofPhotoUrls] = useState<string[]>([])
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -67,16 +67,14 @@ export default function OrdersPage() {
   const handleViewOrder = async (order: Order) => {
     setSelectedOrder(order)
     setDetailModalOpen(true)
-
+    setProofPhotoUrls([])
     if (order.status === 'DELIVERED') {
       try {
-        const res = await ordersApi.getProofPhoto(order.id)
-        setProofPhotoUrl(res.data ?? null)
+        const res = await ordersApi.getProofPhotos(order.id)
+        setProofPhotoUrls(res.data ?? [])
       } catch {
-        setProofPhotoUrl(null)
+        setProofPhotoUrls([])
       }
-    } else {
-      setProofPhotoUrl(null)
     }
   }
 
@@ -292,14 +290,20 @@ export default function OrdersPage() {
             <div><strong>Intentos:</strong> {selectedOrder.deliveryAttempts}/3</div>
             <div><strong>Fecha límite:</strong> {dayjs(selectedOrder.deliveryDeadline).format('DD/MM/YYYY')}</div>
             <div><strong>Creado:</strong> {dayjs(selectedOrder.createdAt).format('DD/MM/YYYY HH:mm')}</div>
-            {proofPhotoUrl && (
+            {proofPhotoUrls.length > 0 && (
               <div>
-                <strong>Foto de entrega:</strong>
-                <img
-                  src={proofPhotoUrl}
-                  alt="Foto de entrega"
-                  style={{ width: '100%', borderRadius: 8, marginTop: 8 }}
-                />
+                <strong>Fotos de entrega:</strong>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                  {proofPhotoUrls.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt={`Foto ${i + 1}`}
+                      style={{ width: '100%', borderRadius: 8, cursor: 'pointer' }}
+                      onClick={() => window.open(url, '_blank')}
+                    />
+                  ))}
+                </div>
               </div>
             )}
           </div>

@@ -160,11 +160,11 @@ public class OrderController {
         return ResponseEntity.ok(ApiResponse.ok(orderRestMapper.toResponse(dto)));
     }
 
-    @GetMapping("/proof-photo/{id}")
-    @Operation(summary = "Get proof photo URL for a delivered order")
-    public ResponseEntity<ApiResponse<String>> getProofPhoto(@PathVariable UUID id) {
-        String url = manageOrdersUseCase.getProofPhotoUrl(id).orElse(null);
-        return ResponseEntity.ok(ApiResponse.ok(url));
+    @GetMapping("/proof-photos/{id}")
+    @Operation(summary = "Get all proof photo URLs for a delivered order")
+    public ResponseEntity<ApiResponse<List<String>>> getProofPhotos(@PathVariable UUID id) {
+        List<String> urls = manageOrdersUseCase.getProofPhotoUrls(id);
+        return ResponseEntity.ok(ApiResponse.ok(urls));
     }
 
 }

@@ -18,9 +18,10 @@ interface Props {
 
 export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: Props) {
   const {
-    loading, uploadingPhoto, photoUri, failModalOpen, selectedReason, setSelectedReason,
+    loading, uploadingPhoto, photoUris, failModalOpen, selectedReason, setSelectedReason,
     failureNotes, setFailureNotes,
     handleDeliver, handleFail, handleCall, handleWhatsApp, handleMaps, handleTakePhoto,
+    handleRemovePhoto,
     openFailModal, closeFailModal,
   } = useStopDetail(stop, onComplete)
 
@@ -92,25 +93,33 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
 
         {/* Foto de entrega */}
         <View style={styles.card}>
-          <Text style={styles.cardLabel}>FOTO DE ENTREGA</Text>
-          {photoUri ? (
-            <View>
-              <Image
-                source={{ uri: photoUri }}
-                style={styles.photoPreview}
-                resizeMode="cover"
-              />
-              <TouchableOpacity style={styles.retakeBtn} onPress={handleTakePhoto}>
-                <Text style={styles.retakeBtnText}>📷 Tomar otra foto</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto} activeOpacity={0.7}>
-              <Text style={styles.photoBtnEmoji}>📷</Text>
-              <Text style={styles.photoBtnText}>Tomar foto de entrega</Text>
-              <Text style={styles.photoBtnSub}>Opcional pero recomendado</Text>
-            </TouchableOpacity>
+          <Text style={styles.cardLabel}>FOTOS DE ENTREGA</Text>
+
+          {photoUris.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {photoUris.map((uri, index) => (
+                  <View key={index} style={styles.photoThumbContainer}>
+                    <Image source={{ uri }} style={styles.photoThumb} resizeMode="cover" />
+                    <TouchableOpacity
+                      style={styles.photoRemoveBtn}
+                      onPress={() => handleRemovePhoto(index)}
+                    >
+                      <Text style={styles.photoRemoveText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
           )}
+
+          <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto} activeOpacity={0.7}>
+            <Text style={styles.photoBtnEmoji}>📷</Text>
+            <Text style={styles.photoBtnText}>
+              {photoUris.length === 0 ? 'Tomar foto de entrega' : '+ Agregar otra foto'}
+            </Text>
+            {photoUris.length === 0 && <Text style={styles.photoBtnSub}>Opcional pero recomendado</Text>}
+          </TouchableOpacity>
         </View>
 
         {/* Acciones */}
@@ -119,8 +128,8 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
             {loading
               ? <ActivityIndicator color="#fff" />
               : <Text style={styles.deliverBtnText}>
-                  {uploadingPhoto ? '⬆️ Subiendo foto...' : '✓ Entrega exitosa'}
-                </Text>
+                {uploadingPhoto ? '⬆️ Subiendo foto...' : '✓ Entrega exitosa'}
+              </Text>
             }
           </TouchableOpacity>
           <TouchableOpacity style={styles.failBtn} onPress={openFailModal} disabled={loading} activeOpacity={0.85}>
@@ -278,4 +287,18 @@ const styles = StyleSheet.create({
   modalConfirmBtn: { flex: 1, backgroundColor: '#ff3b30', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   modalConfirmBtnDisabled: { backgroundColor: '#ffb3b0' },
   modalConfirmText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  photoThumbContainer: {
+    position: 'relative', width: 100, height: 100,
+  },
+  photoThumb: {
+    width: 100, height: 100, borderRadius: 10,
+  },
+  photoRemoveBtn: {
+    position: 'absolute', top: 4, right: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10,
+    width: 20, height: 20, alignItems: 'center', justifyContent: 'center',
+  },
+  photoRemoveText: {
+    color: '#fff', fontSize: 11, fontWeight: '700',
+  },
 })

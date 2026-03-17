@@ -7,6 +7,9 @@ import com.lastmile.domain.port.in.ExecuteRouteUseCase;
 import com.lastmile.domain.port.out.NotificationPort;
 import com.lastmile.domain.port.out.OrderRepository;
 import com.lastmile.domain.port.out.RouteRepository;
+import com.lastmile.infrastructure.adapter.out.persistence.entity.StopPhotoEntity;
+import com.lastmile.infrastructure.adapter.out.persistence.repository.StopJpaRepository;
+import com.lastmile.infrastructure.adapter.out.persistence.repository.StopPhotoJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -26,6 +29,7 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
     private final RouteRepository routeRepository;
     private final OrderRepository orderRepository;
     private final NotificationPort notificationPort;
+
 
     @Override
     public Route getMyRouteForToday(UUID courierId) {
@@ -63,33 +67,34 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
 
     @Override
     @Transactional
-    public Stop registerSuccessfulDelivery(UUID stopId, String proofPhotoUrl) {
+    public Stop registerSuccessfulDelivery(UUID stopId, List<String> photoUrls) {
         Stop stop = routeRepository.findStopById(stopId)
                 .orElseThrow(() -> new StopNotFoundException(stopId));
 
-        Stop delivered = stop.markAsDelivered(LocalDateTime.now(), proofPhotoUrl);
+        String firstPhotoUrl = photoUrls != null && !photoUrls.isEmpty() ? photoUrls.get(0) : null;
+        Stop delivered = stop.markAsDelivered(LocalDateTime.now(), firstPhotoUrl);
 
         Order deliveredOrder = stop.getOrder().markAsDelivered();
         orderRepository.save(deliveredOrder);
-        notificationPort.notifyOrderDelivered(deliveredOrder, delivered);
-
-        log.info("Order {} successfully delivered at stop {}",
-                stop.getOrder().getTrackingCode(), stopId);
 
         Stop savedStop = routeRepository.saveStop(delivered);
 
+        if (photoUrls != null && !photoUrls.isEmpty()) {
+            routeRepository.saveStopPhotos(savedStop.getId(), photoUrls);
+        }
+
+        notificationPort.notifyOrderDelivered(deliveredOrder, delivered);
+
+        log.info("Order {} successfully delivered at stop {} with {} photos",
+                stop.getOrder().getTrackingCode(), stopId, photoUrls != null ? photoUrls.size() : 0);
+
         routeRepository.findById(stop.getRouteId()).ifPresent(route -> {
             boolean allDone = route.getStops().stream()
-                    .allMatch(s -> s.getId().equals(stopId)
-                            ? true
-                            : s.getStatus() != StopStatus.PENDING);
-
+                    .allMatch(s -> s.getId().equals(stopId) || s.getStatus() != StopStatus.PENDING);
             if (allDone) {
-                Route completed = route
-                        .withStatus(RouteStatus.COMPLETED)
-                        .withCompletedAt(LocalDateTime.now());
+                Route completed = route.withStatus(RouteStatus.COMPLETED).withCompletedAt(LocalDateTime.now());
                 routeRepository.save(completed);
-                log.info("Route {} auto-completed. All stops finished.", route.getId());
+                log.info("Route {} auto-completed.", route.getId());
             }
         });
 

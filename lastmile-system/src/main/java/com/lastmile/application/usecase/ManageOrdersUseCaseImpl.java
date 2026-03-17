@@ -123,12 +123,12 @@ public class ManageOrdersUseCaseImpl implements ManageOrdersUseCase {
     }
 
     @Override
-    public Optional<String> getProofPhotoUrl(UUID orderId) {
+    public List<String> getProofPhotoUrls(UUID orderId) {
         return routeRepository.findRoutesByOrderId(orderId).stream()
                 .flatMap(route -> route.getStops().stream())
-                .filter(stop -> stop.getOrder().getId().equals(orderId)
-                        && stop.getProofPhotoUrl() != null)
-                .map(Stop::getProofPhotoUrl)
-                .findFirst();
+                .filter(stop -> stop.getOrder().getId().equals(orderId))
+                .findFirst()
+                .map(stop -> routeRepository.getStopPhotos(stop.getId()))
+                .orElse(List.of());
     }
 }

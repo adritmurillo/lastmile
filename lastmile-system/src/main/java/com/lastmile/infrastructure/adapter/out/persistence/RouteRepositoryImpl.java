@@ -6,14 +6,17 @@ import com.lastmile.domain.model.Stop;
 import com.lastmile.domain.port.out.RouteRepository;
 import com.lastmile.infrastructure.adapter.out.persistence.entity.RouteEntity;
 import com.lastmile.infrastructure.adapter.out.persistence.entity.StopEntity;
+import com.lastmile.infrastructure.adapter.out.persistence.entity.StopPhotoEntity;
 import com.lastmile.infrastructure.adapter.out.persistence.mapper.RoutePersistenceMapper;
 import com.lastmile.infrastructure.adapter.out.persistence.mapper.StopPersistenceMapper;
 import com.lastmile.infrastructure.adapter.out.persistence.repository.RouteJpaRepository;
 import com.lastmile.infrastructure.adapter.out.persistence.repository.StopJpaRepository;
+import com.lastmile.infrastructure.adapter.out.persistence.repository.StopPhotoJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -25,6 +28,7 @@ public class RouteRepositoryImpl implements RouteRepository {
     private final StopJpaRepository stopJpaRepository;
     private final RoutePersistenceMapper routeMapper;
     private final StopPersistenceMapper stopMapper;
+    private final StopPhotoJpaRepository stopPhotoJpaRepository;
 
 
     @Override
@@ -95,5 +99,29 @@ public class RouteRepositoryImpl implements RouteRepository {
     @Override
     public List<Route> findRoutesByOrderId(UUID orderId) {
         return routeMapper.toDomainList(routeJpaRepository.findByOrderId(orderId));
+    }
+
+    @Override
+    public void saveStopPhotos(UUID stopId, List<String> photoUrls) {
+        StopEntity stopEntity = stopJpaRepository.findById(stopId)
+                .orElseThrow(() -> new RuntimeException("Stop not found: " +stopId));
+        for (int i = 0; i < photoUrls.size(); i++) {
+            StopPhotoEntity photo = StopPhotoEntity.builder()
+                    .id(UUID.randomUUID())
+                    .stop(stopEntity)
+                    .photoUrl(photoUrls.get(i))
+                    .takenAt(LocalDateTime.now())
+                    .photoOrder(i + 1)
+                    .build();
+            stopPhotoJpaRepository.save(photo);
+        }
+    }
+
+    @Override
+    public List<String> getStopPhotos(UUID stopId) {
+        return stopPhotoJpaRepository.findByStopIdOrderByPhotoOrderAsc(stopId)
+                .stream()
+                .map(StopPhotoEntity :: getPhotoUrl)
+                .toList();
     }
 }

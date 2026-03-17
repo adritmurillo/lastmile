@@ -39,8 +39,8 @@ export const ordersApi = {
     return response.data
   },
 
-  getProofPhoto: async (id: string) => {
-  const res = await api.get<ApiResponse<string>>(`/orders/proof-photo/${id}`)
-  return res.data
-},
+  getProofPhotos: async (id: string) => {
+    const res = await api.get<ApiResponse<string[]>>(`/orders/proof-photos/${id}`)
+    return res.data
+  },
 }

@@ -21,9 +21,9 @@ export const routesApi = {
     return response.data.data
   },
 
-  deliverStop: async (stopId: string, proofPhotoUrl?: string | null) => {
+  deliverStop: async (stopId: string, photoUrls?: string[]) => {
     const response = await apiClient.post<{ data: any }>(`/routes/stops/${stopId}/deliver`, {
-      proofPhotoUrl: proofPhotoUrl ?? null
+      photoUrls: photoUrls ?? []
     })
     return response.data.data
   },
@@ -37,20 +37,21 @@ export const routesApi = {
   },
 
   uploadDeliveryPhoto: async (imageUri: string): Promise<string> => {
-  const formData = new FormData()
-  formData.append('file', {
-    uri: imageUri,
-    type: 'image/jpeg',
-    name: 'delivery.jpg',
-  } as any)
-  formData.append('upload_preset', 'lastmile_delivery')
-  formData.append('cloud_name', 'dxdj5zgse')
+    const formData = new FormData()
+    formData.append('file', {
+      uri: imageUri,
+      type: 'image/jpeg',
+      name: 'delivery.jpg',
+    } as any)
+    formData.append('upload_preset', 'lastmile_delivery')
+    formData.append('cloud_name', 'dxdj5zgse')
 
-  const response = await fetch(
-    'https://api.cloudinary.com/v1_1/dxdj5zgse/image/upload',
-    { method: 'POST', body: formData }
-  )
-  const data = await response.json()
-  return data.secure_url
-},
+    const response = await fetch(
+      'https://api.cloudinary.com/v1_1/dxdj5zgse/image/upload',
+      { method: 'POST', body: formData }
+    )
+    const data = await response.json()
+    return data.secure_url
+  },
+
 }

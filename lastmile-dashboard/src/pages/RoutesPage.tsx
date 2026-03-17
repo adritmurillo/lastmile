@@ -5,6 +5,7 @@ import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { routesApi } from '../api/routesApi'
 import type { Route, Stop } from '../types'
+import { ordersApi } from '../api/ordersApi'
 
 const statusColors: Record<string, string> = {
   PENDING: 'gold',
@@ -36,7 +37,7 @@ export default function RoutesPage() {
   const [routes, setRoutes] = useState<Route[]>([])
   const [loading, setLoading] = useState(false)
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'))
-  const [previewPhoto, setPreviewPhoto] = useState<string | null>(null)
+  const [previewPhotos, setPreviewPhotos] = useState<string[]>([])
   const allRoutesRef = useRef<Route[]>([])
 
   const fetchRoutes = async () => {
@@ -67,15 +68,22 @@ export default function RoutesPage() {
         render: (s) => <Tag color={stopStatusColors[s]}>{s}</Tag>,
       },
       {
-        title: 'Foto',
+        title: 'Fotos',
         key: 'photo',
         render: (_, stop) => stop.proofPhotoUrl ? (
           <Button
             size="small"
             icon={<CameraOutlined />}
-            onClick={() => setPreviewPhoto(stop.proofPhotoUrl!)}
+            onClick={async () => {
+              try {
+                const res = await ordersApi.getProofPhotos(stop.order.id)
+                setPreviewPhotos(res.data ?? [])
+              } catch {
+                setPreviewPhotos([stop.proofPhotoUrl!])
+              }
+            }}
           >
-            Ver foto
+            Ver fotos
           </Button>
         ) : (
           <span style={{ color: '#bfbfbf', fontSize: 12 }}>Sin foto</span>
@@ -155,19 +163,23 @@ export default function RoutesPage() {
       </Card>
 
       <Modal
-        open={!!previewPhoto}
-        onCancel={() => setPreviewPhoto(null)}
+        open={previewPhotos.length > 0}
+        onCancel={() => setPreviewPhotos([])}
         footer={null}
-        title="Foto de entrega"
+        title={`Fotos de entrega (${previewPhotos.length})`}
         centered
       >
-        {previewPhoto && (
-          <Image
-            src={previewPhoto}
-            style={{ width: '100%', borderRadius: 8 }}
-            preview={false}
-          />
-        )}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {previewPhotos.map((url, i) => (
+            <Image
+              key={i}
+              src={url}
+              style={{ width: '100%', borderRadius: 8 }}
+              preview={false}
+              onClick={() => window.open(url, '_blank')}
+            />
+          ))}
+        </div>
       </Modal>
     </div>
   )

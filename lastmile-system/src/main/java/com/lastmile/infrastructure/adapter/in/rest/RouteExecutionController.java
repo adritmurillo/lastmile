@@ -96,7 +96,7 @@ public class RouteExecutionController {
 
         StopDto stop = routeDomainMapper.toStopDto(
                 executeRouteUseCase.registerSuccessfulDelivery(
-                        stopId, request.getProofPhotoUrl()));
+                        stopId, request.getPhotoUrls()));
 
         return ResponseEntity.ok(ApiResponse.ok(routeRestMapper.toStopResponse(stop)));
     }
