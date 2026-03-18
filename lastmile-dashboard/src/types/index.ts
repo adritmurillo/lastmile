@@ -28,7 +28,7 @@ export interface Order {
   weightKg: number
   volumeCm3: number
   priority: 'STANDARD' | 'EXPRESS'
-  status: 'PENDING' | 'ASSIGNED' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED' | 'CANCELLED'
+  status: 'PENDING' | 'ASSIGNED' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED' | 'CANCELLED' | 'RETURNED' | 'READY_TO_DISPATCH'
   deliveryAttempts: number
   deliveryDeadline: string
   createdAt: string

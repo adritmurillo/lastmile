@@ -131,4 +131,20 @@ public class ManageOrdersUseCaseImpl implements ManageOrdersUseCase {
                 .map(stop -> routeRepository.getStopPhotos(stop.getId()))
                 .orElse(List.of());
     }
+
+    @Override
+    @Transactional
+    public Order markAsReadyToDispatch(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " +orderId));
+
+        if(order.getStatus() != OrderStatus.PENDING){
+            throw new RuntimeException("Order must be PENDING to mark as ready: "+orderId);
+        }
+
+        Order updated = order.withStatus(OrderStatus.READY_TO_DISPATCH);
+        log.info("Order {} marked as READY_TO_DISPATCH", order.getTrackingCode());
+
+        return orderRepository.save(updated);
+    }
 }

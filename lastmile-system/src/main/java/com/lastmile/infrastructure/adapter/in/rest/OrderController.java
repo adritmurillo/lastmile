@@ -4,7 +4,6 @@ import com.lastmile.application.usecase.dto.OrderDto;
 import com.lastmile.domain.model.OrderPriority;
 import com.lastmile.domain.model.OrderStatus;
 import com.lastmile.domain.port.in.LoadOrdersUseCase;
-import com.lastmile.domain.port.in.ManageCouriersUseCase;
 import com.lastmile.domain.port.in.ManageOrdersUseCase;
 import com.lastmile.infrastructure.adapter.in.rest.dto.request.CreateOrderRequest;
 import com.lastmile.infrastructure.adapter.in.rest.dto.response.ApiResponse;
@@ -165,6 +164,15 @@ public class OrderController {
     public ResponseEntity<ApiResponse<List<String>>> getProofPhotos(@PathVariable UUID id) {
         List<String> urls = manageOrdersUseCase.getProofPhotoUrls(id);
         return ResponseEntity.ok(ApiResponse.ok(urls));
+    }
+
+    @PatchMapping("/{id}/receive")
+    @Operation(summary = "Mark order as received in warehouse")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
+    public ResponseEntity<ApiResponse<OrderResponse>> receiveOrder(@PathVariable UUID id){
+        OrderDto dto = orderDomainMapper.toDto(manageOrdersUseCase.markAsReadyToDispatch(id));
+        return ResponseEntity.ok(ApiResponse.ok(orderRestMapper.toResponse(dto)));
+
     }
 
 }

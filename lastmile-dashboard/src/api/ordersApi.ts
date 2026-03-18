@@ -43,4 +43,9 @@ export const ordersApi = {
     const res = await api.get<ApiResponse<string[]>>(`/orders/proof-photos/${id}`)
     return res.data
   },
+
+  receiveOrder: async (id: string) => {
+    const response = await api.patch<ApiResponse<Order>>(`/orders/${id}/receive`)
+    return response.data
+  },
 }

@@ -8,6 +8,7 @@ import type { Order } from '../types'
 
 const statusColors: Record<string, string> = {
   PENDING: 'gold',
+  READY_TO_DISPATCH: 'cyan',
   ASSIGNED: 'blue',
   IN_TRANSIT: 'purple',
   DELIVERED: 'green',
@@ -18,6 +19,7 @@ const statusColors: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   PENDING: 'Pendiente',
+  READY_TO_DISPATCH: 'Listo para despachar',
   ASSIGNED: 'Asignado',
   IN_TRANSIT: 'En tránsito',
   DELIVERED: 'Entregado',
@@ -126,17 +128,29 @@ export default function OrdersPage() {
       render: (_, record) => (
         <Space>
           <Button size="small" onClick={() => handleViewOrder(record)}>Ver</Button>
-          {record.status !== 'DELIVERED' && record.status !== 'CANCELLED' && (
-            <Button size="small" danger onClick={async () => {
+          {record.status === 'PENDING' && (
+            <Button size="small" type="primary" onClick={async () => {
               try {
-                await ordersApi.cancelOrder(record.id)
-                messageApi.success('Orden cancelada')
+                await ordersApi.receiveOrder(record.id)
+                messageApi.success('Paquete recibido en almacén')
                 fetchOrders()
               } catch {
-                messageApi.error('No se puede cancelar esta orden')
+                messageApi.error('No se pudo actualizar la orden')
               }
-            }}>Cancelar</Button>
+            }}>Recibido</Button>
           )}
+          {record.status !== 'DELIVERED' && record.status !== 'CANCELLED'
+            && record.status !== 'RETURNED' && (
+              <Button size="small" danger onClick={async () => {
+                try {
+                  await ordersApi.cancelOrder(record.id)
+                  messageApi.success('Orden cancelada')
+                  fetchOrders()
+                } catch {
+                  messageApi.error('No se puede cancelar esta orden')
+                }
+              }}>Cancelar</Button>
+            )}
         </Space>
       )
     }
