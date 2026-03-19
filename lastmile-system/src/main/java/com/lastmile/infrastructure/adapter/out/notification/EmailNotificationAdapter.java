@@ -7,6 +7,7 @@ import com.lastmile.infrastructure.adapter.out.notification.template.OrderCreate
 import com.lastmile.infrastructure.adapter.out.notification.template.OrderDeliveredEmailTemplate;
 import com.lastmile.infrastructure.adapter.out.notification.template.OrderFailedEmailTemplate;
 import com.lastmile.infrastructure.adapter.out.notification.template.OrderInTransitEmailTemplate;
+import com.lastmile.infrastructure.adapter.out.persistence.entity.StopPhotoEntity;
 import com.lastmile.infrastructure.adapter.out.persistence.repository.StopPhotoJpaRepository;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.util.ByteArrayDataSource;
@@ -48,15 +49,14 @@ public class EmailNotificationAdapter implements NotificationPort {
     @Async
     @Override
     public void notifyOrderDelivered(Order order, Stop stop) {
-        byte[] pdf = voucherPdfGenerator.generate(order);
-        String filename = "comprobante-" + order.getTrackingCode() + ".pdf";
         List<String> photoUrls = stopPhotoJpaRepository
                 .findByStopIdOrderByPhotoOrderAsc(stop.getId())
                 .stream()
-                .map(photo -> photo.getPhotoUrl())
+                .map(StopPhotoEntity::getPhotoUrl)
                 .toList();
-        sendHtml(order, orderDeliveredTemplate.subject(order),
-                orderDeliveredTemplate.build(order, stop, photoUrls), pdf, filename);
+        byte[] pdf = voucherPdfGenerator.generate(order, photoUrls);
+        String filename = "comprobante-" + order.getTrackingCode() + ".pdf";
+        sendHtml(order, orderDeliveredTemplate.subject(order), orderDeliveredTemplate.build(order,stop,photoUrls), pdf, filename);
     }
 
     @Async

@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
-import { Card, Button, DatePicker, Table, Tag, Space, Steps, message, Row, Col, Statistic } from 'antd'
-import { ThunderboltOutlined, CheckOutlined, NodeIndexOutlined, CarOutlined } from '@ant-design/icons'
+import { Card, Button, DatePicker, Table, Tag, Space, Steps, message, Row, Col, Statistic, Modal, Select, Form } from 'antd'
+import { ThunderboltOutlined, CheckOutlined, NodeIndexOutlined, CarOutlined, PlusOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
 import { routesApi } from '../api/routesApi'
-import type { Route } from '../types'
+import { ordersApi } from '../api/ordersApi'
+import { couriersApi } from '../api/couriersApi'
+import type { Route, Order, Courier } from '../types'
 
 const statusColors: Record<string, string> = {
   PENDING: 'gold',
@@ -27,6 +29,12 @@ export default function DispatchPage() {
   const [selectedDate, setSelectedDate] = useState(dayjs().format('YYYY-MM-DD'))
   const [messageApi, contextHolder] = message.useMessage()
 
+  const [urgentModalOpen, setUrgentModalOpen] = useState(false)
+  const [urgentOrders, setUrgentOrders] = useState<Order[]>([])
+  const [couriers, setCouriers] = useState<Courier[]>([])
+  const [urgentLoading, setUrgentLoading] = useState(false)
+  const [form] = Form.useForm()
+
   const fetchRoutes = async () => {
     setLoading(true)
     try {
@@ -40,6 +48,35 @@ export default function DispatchPage() {
   useEffect(() => {
     fetchRoutes()
   }, [selectedDate])
+
+  const handleOpenUrgentModal = async () => {
+    setUrgentModalOpen(true)
+    try {
+      const [ordersRes, couriersRes] = await Promise.all([
+        ordersApi.getOrders({ status: 'READY_TO_DISPATCH' }),
+        couriersApi.getAll(),
+      ])
+      setUrgentOrders(ordersRes.data)
+      setCouriers(couriersRes.data)
+    } catch {
+      messageApi.error('Error al cargar datos')
+    }
+  }
+
+  const handleAssignUrgent = async (values: { orderId: string; courierId: string }) => {
+    setUrgentLoading(true)
+    try {
+      await routesApi.moveOrderToCourier(values.orderId, values.courierId)
+      messageApi.success('Orden asignada correctamente')
+      setUrgentModalOpen(false)
+      form.resetFields()
+      fetchRoutes()
+    } catch {
+      messageApi.error('No se pudo asignar la orden — verifica que el courier tenga una ruta activa')
+    } finally {
+      setUrgentLoading(false)
+    }
+  }
 
   const handleGenerateProposal = async () => {
     setActionLoading(true)
@@ -68,20 +105,16 @@ export default function DispatchPage() {
   }
 
   const currentStep = () => {
-  if (routes.length === 0) return 0
-  if (routes.some(r => r.status === 'COMPLETED')) return 3
-  if (routes.some(r => r.status === 'IN_PROGRESS')) return 3
-  if (routes.some(r => r.status === 'CONFIRMED')) return 2
-  if (routes.some(r => r.status === 'PENDING')) return 1
-  return 0
-}
+    if (routes.length === 0) return 0
+    if (routes.some(r => r.status === 'COMPLETED')) return 3
+    if (routes.some(r => r.status === 'IN_PROGRESS')) return 3
+    if (routes.some(r => r.status === 'CONFIRMED')) return 2
+    if (routes.some(r => r.status === 'PENDING')) return 1
+    return 0
+  }
 
   const columns: ColumnsType<Route> = [
-    {
-      title: 'Courier',
-      dataIndex: ['courier', 'fullName'],
-      key: 'courier',
-    },
+    { title: 'Courier', dataIndex: ['courier', 'fullName'], key: 'courier' },
     {
       title: 'Vehículo',
       dataIndex: ['courier', 'vehicle', 'licensePlate'],
@@ -156,6 +189,13 @@ export default function DispatchPage() {
               >
                 Confirmar rutas
               </Button>
+              <Button
+                icon={<PlusOutlined />}
+                onClick={handleOpenUrgentModal}
+                disabled={routes.length === 0}
+              >
+                Asignar orden urgente
+              </Button>
             </Space>
           </Col>
         </Row>
@@ -195,6 +235,54 @@ export default function DispatchPage() {
           pagination={false}
         />
       </Card>
+
+      {/* Modal orden urgente */}
+      <Modal
+        title="🚨 Asignar orden urgente"
+        open={urgentModalOpen}
+        onCancel={() => { setUrgentModalOpen(false); form.resetFields() }}
+        onOk={() => form.submit()}
+        okText="Asignar"
+        cancelText="Cancelar"
+        confirmLoading={urgentLoading}
+        centered
+      >
+        <p style={{ color: '#666', marginBottom: 16 }}>
+          Asigna una orden <strong>Lista para despachar</strong> directamente a un courier específico.
+        </p>
+        <Form form={form} layout="vertical" onFinish={handleAssignUrgent}>
+          <Form.Item
+            name="orderId"
+            label="Orden"
+            rules={[{ required: true, message: 'Selecciona una orden' }]}
+          >
+            <Select
+              placeholder="Selecciona la orden..."
+              showSearch
+              optionFilterProp="label"
+              options={urgentOrders.map(o => ({
+                value: o.id,
+                label: `${o.trackingCode} — ${o.recipientName}`,
+              }))}
+            />
+          </Form.Item>
+          <Form.Item
+            name="courierId"
+            label="Courier"
+            rules={[{ required: true, message: 'Selecciona un courier' }]}
+          >
+            <Select
+              placeholder="Selecciona el courier..."
+              showSearch
+              optionFilterProp="label"
+              options={couriers.map(c => ({
+                value: c.id,
+                label: `${c.fullName} — ${c.vehicle?.licensePlate || 'Sin vehículo'}`,
+              }))}
+            />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   )
 }

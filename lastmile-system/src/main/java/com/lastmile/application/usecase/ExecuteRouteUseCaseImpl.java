@@ -7,9 +7,6 @@ import com.lastmile.domain.port.in.ExecuteRouteUseCase;
 import com.lastmile.domain.port.out.NotificationPort;
 import com.lastmile.domain.port.out.OrderRepository;
 import com.lastmile.domain.port.out.RouteRepository;
-import com.lastmile.infrastructure.adapter.out.persistence.entity.StopPhotoEntity;
-import com.lastmile.infrastructure.adapter.out.persistence.repository.StopJpaRepository;
-import com.lastmile.infrastructure.adapter.out.persistence.repository.StopPhotoJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -71,7 +68,7 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
         Stop stop = routeRepository.findStopById(stopId)
                 .orElseThrow(() -> new StopNotFoundException(stopId));
 
-        String firstPhotoUrl = photoUrls != null && !photoUrls.isEmpty() ? photoUrls.get(0) : null;
+        String firstPhotoUrl = photoUrls != null && !photoUrls.isEmpty() ? photoUrls.getFirst() : null;
         Stop delivered = stop.markAsDelivered(LocalDateTime.now(), firstPhotoUrl);
 
         Order deliveredOrder = stop.getOrder().markAsDelivered();
@@ -145,5 +142,25 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
     @Override
     public List<Stop> getPendingStopsFromPreviousDays(UUID courierId) {
         return routeRepository.findPendingStopsByCourier(courierId);
+    }
+
+    @Override
+    @Transactional
+    public Route closeRoute(UUID routeId, String reason) {
+        Route route = routeRepository.findById(routeId)
+                .orElseThrow(() -> new RouteNotFoundException(routeId));
+
+        long pendingCount = route.getStops().stream()
+                .filter(s -> s.getStatus() == StopStatus.PENDING)
+                .count();
+
+        Route closed = route
+                .withStatus(RouteStatus.COMPLETED)
+                .withCompletedAt(LocalDateTime.now());
+
+        log.info("Route {} force-closed by dispatcher. Reason: {}. Pending stops left: {}",
+                routeId, reason, pendingCount);
+
+        return routeRepository.save(closed);
     }
 }

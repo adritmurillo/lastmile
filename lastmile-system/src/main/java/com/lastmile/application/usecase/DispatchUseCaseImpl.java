@@ -188,6 +188,9 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
                 .withTotalWeightKg(targetRoute.getTotalWeightKg() + order.getWeightKg())
                 .withTotalVolumeCm3(targetRoute.getTotalVolumeCm3() + order.getVolumeCm3());
 
+        Order assignedOrder = order.withStatus(OrderStatus.ASSIGNED);
+        orderRepository.save(assignedOrder);
+
         return routeRepository.save(updatedRoute);
     }
 

@@ -130,4 +130,15 @@ public class RouteExecutionController {
 
         return ResponseEntity.ok(ApiResponse.ok(stops));
     }
+
+    @PostMapping("/{routeId}/close")
+    @Operation(summary = "Force close a route", description = "Dispatcher closes an incomplete route at end of day")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
+    public ResponseEntity<ApiResponse<RouteResponse>> closeRoute(
+            @PathVariable UUID routeId,
+            @RequestParam String reason) {
+
+        RouteDto route = routeDomainMapper.toDto(executeRouteUseCase.closeRoute(routeId, reason));
+        return ResponseEntity.ok(ApiResponse.ok(routeRestMapper.toResponse(route)));
+    }
 }
