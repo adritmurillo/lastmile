@@ -72,7 +72,7 @@ export default function DispatchPage() {
       form.resetFields()
       fetchRoutes()
     } catch {
-      messageApi.error('No se pudo asignar la orden — verifica que el courier tenga una ruta activa')
+      messageApi.error('El courier ya salió a ruta. Solo puedes asignar a couriers con estado Confirmado.')
     } finally {
       setUrgentLoading(false)
     }

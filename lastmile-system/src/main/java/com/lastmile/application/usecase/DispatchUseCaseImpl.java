@@ -8,6 +8,7 @@ import com.lastmile.domain.model.*;
 import com.lastmile.domain.port.in.DispatchUseCase;
 import com.lastmile.domain.port.out.*;
 import com.lastmile.domain.service.RouteDomainService;
+import com.lastmile.infrastructure.adapter.out.notification.PushNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -31,6 +32,7 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
     private final RouteRepository routeRepository;
     private final RouteOptimizerPort routeOptimizerPort;
     private final RouteDomainService routeDomainService;
+    private final PushNotificationService pushNotificationService;
 
     @Value("${lastmile.warehouse.latitude}")
     private Double warehouseLatitude;
@@ -170,7 +172,8 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
                 .orElseThrow(() -> new RouteNotFoundException(targetCourierId));
 
         if (targetRoute.isInProgress()) {
-            throw new RouteNotModifiableException(targetRoute.getId());
+            throw new RouteNotModifiableException(
+                    "El courier ya salió a ruta. Solo puedes asignar órdenes a couriers con estado Confirmado.");
         }
 
         List<Stop> updatedStops = new java.util.ArrayList<>(targetRoute.getStops());
@@ -190,6 +193,15 @@ public class DispatchUseCaseImpl implements DispatchUseCase {
 
         Order assignedOrder = order.withStatus(OrderStatus.ASSIGNED);
         orderRepository.save(assignedOrder);
+
+        if (targetCourier.getFcmToken() != null){
+            pushNotificationService.sendToDevice(
+                    targetCourier.getFcmToken(),
+                    "📦 Nueva entrega asignada",
+                    "Se te ha asignado una nueva entrega: " + order.getRecipientName() +
+                            " en " + order.getAddressText()
+            );
+        }
 
         return routeRepository.save(updatedRoute);
     }

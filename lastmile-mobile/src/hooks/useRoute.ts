@@ -17,6 +17,7 @@ export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void) {
   const [startingRoute, setStartingRoute] = useState(false)
 
   const fetchRoute = async () => {
+    console.log('Fetching route for courier:', user?.courierId)
     try {
       const data = await routesApi.getMiRuta(user!.courierId!)
       setRoute(data)
@@ -54,6 +55,7 @@ export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void) {
       onSelectStop(stop, route!.id)
     }
   }
+  
 
   const openMapsWithAllStops = (stops: Stop[]) => {
     const pendingStops = stops.filter(s => s.status === 'PENDING')

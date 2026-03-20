@@ -114,4 +114,13 @@ public class ManageCouriersUseCaseImpl implements ManageCouriersUseCase {
     public List<Vehicle> getAllVehicles() {
         return vehicleRepository.findAll();
     }
+
+    @Override
+    @Transactional
+    public void updateFcmToken(UUID courierId, String fcmToken) {
+        Courier courier = courierRepository.findById(courierId).orElseThrow(()->new CourierNotFoundException(courierId));
+        Courier updated = courier.withFcmToken(fcmToken);
+        courierRepository.save(updated);
+        log.info("FCM token updated for courier: {}", courier.getFullName());
+    }
 }

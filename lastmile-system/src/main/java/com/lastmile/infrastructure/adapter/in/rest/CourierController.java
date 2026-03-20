@@ -22,6 +22,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -145,5 +146,14 @@ public class CourierController {
         List<VehicleDto> vehicles = courierDomainMapper.toVehicleDtoList(
                 manageCouriersUseCase.getAllVehicles());
         return ResponseEntity.ok(ApiResponse.ok(courierRestMapper.toVehicleResponseList(vehicles)));
+    }
+
+    @PostMapping("/{id}/fcm-token")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
+    public ResponseEntity<ApiResponse<String>> updateFcmToken(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        manageCouriersUseCase.updateFcmToken(id, body.get("token"));
+        return ResponseEntity.ok(ApiResponse.ok("FCM token updated"));
     }
 }

@@ -16,4 +16,5 @@ public interface ManageCouriersUseCase {
     List<Courier> getAllCouriers();
     Courier updateCourier(Courier courier);
     List<Vehicle> getAllVehicles();
+    void updateFcmToken(UUID courierId, String fcmToken);
 }

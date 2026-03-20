@@ -9,6 +9,7 @@ import com.lastmile.infrastructure.adapter.out.persistence.entity.StopEntity;
 import com.lastmile.infrastructure.adapter.out.persistence.entity.StopPhotoEntity;
 import com.lastmile.infrastructure.adapter.out.persistence.mapper.RoutePersistenceMapper;
 import com.lastmile.infrastructure.adapter.out.persistence.mapper.StopPersistenceMapper;
+import com.lastmile.infrastructure.adapter.out.persistence.repository.CourierJpaRepository;
 import com.lastmile.infrastructure.adapter.out.persistence.repository.RouteJpaRepository;
 import com.lastmile.infrastructure.adapter.out.persistence.repository.StopJpaRepository;
 import com.lastmile.infrastructure.adapter.out.persistence.repository.StopPhotoJpaRepository;
@@ -29,11 +30,18 @@ public class RouteRepositoryImpl implements RouteRepository {
     private final RoutePersistenceMapper routeMapper;
     private final StopPersistenceMapper stopMapper;
     private final StopPhotoJpaRepository stopPhotoJpaRepository;
+    private final CourierJpaRepository courierJpaRepository;
 
 
     @Override
     public Route save(Route route) {
         RouteEntity routeEntity = routeMapper.toEntity(route);
+        if (route.getCourier() != null) {
+            courierJpaRepository.findById(route.getCourier().getId()).ifPresent(
+                    routeEntity::setCourier
+            );
+        }
+
         if (routeEntity.getStops() != null) {
             routeEntity.getStops().forEach(stop -> stop.setRoute(routeEntity));
         }

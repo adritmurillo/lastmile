@@ -43,6 +43,9 @@ public class CourierEntity {
     @JoinColumn(name = "vehicle_id")
     private VehicleEntity vehicle;
 
+    @Column(name = "fcm_token")
+    private String fcmToken;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
