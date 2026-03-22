@@ -8,7 +8,7 @@ import type { Route, Stop } from '../types'
 
 dayjs.locale('es')
 
-export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void) {
+export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void, onProfile:()=>void) {
   const { user, logout } = useAuth()
   const [route, setRoute] = useState<Route | null>(null)
   const [pendingStops, setPendingStops] = useState<Stop[]>([])

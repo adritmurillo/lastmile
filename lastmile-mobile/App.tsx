@@ -4,9 +4,11 @@ import { ActivityIndicator, Animated, Dimensions, StyleSheet, View } from 'react
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler'
 import { AuthProvider, useAuth } from './src/context/AuthContext'
 import LoginScreen from './src/screens/LoginScreen'
+import ProfileScreen from './src/screens/ProfileScreen'
 import RouteScreen from './src/screens/RouteScreen'
 import StopDetailScreen from './src/screens/StopDetailScreen'
 import type { Stop } from './src/types'
+
 
 const { width } = Dimensions.get('window')
 
@@ -17,7 +19,7 @@ const styles = StyleSheet.create({
   screen: { ...StyleSheet.absoluteFillObject, backgroundColor: '#f2f2f7' },
 })
 
-type Screen = 'route' | 'stopDetail'
+type Screen = 'route' | 'stopDetail' | 'profile'
 
 function AppNavigator() {
   const { user, loading } = useAuth()
@@ -153,10 +155,11 @@ function AppNavigator() {
             setSelectedRouteId(routeId)
             navigateTo('stopDetail')
           }}
+          onProfile={()=> navigateTo('profile')}
         />
       </Animated.View>
 
-      {selectedStop && (
+      {screen === 'stopDetail' && selectedStop && (
         <PanGestureHandler
           onGestureEvent={onGestureEvent}
           onHandlerStateChange={onHandlerStateChange}
@@ -173,6 +176,22 @@ function AppNavigator() {
               onBack={() => navigateBack()}
               onComplete={() => navigateBack()}
             />
+          </Animated.View>
+        </PanGestureHandler>
+      )}
+
+      {screen === 'profile' && (
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+          activeOffsetX={10}
+          failOffsetY={[-20, 20]}
+          enabled={screen === 'profile'}
+        >
+          <Animated.View
+            style={[styles.screen, { transform: [{ translateX: detailTranslate }] }]}
+          >
+            <ProfileScreen onBack={() => navigateBack()} />
           </Animated.View>
         </PanGestureHandler>
       )}

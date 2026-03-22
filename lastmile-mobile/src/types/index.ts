@@ -28,6 +28,25 @@ export interface Stop {
   }
 }
 
+export interface Courier {
+  id: string
+  firstName: string
+  lastName: string
+  fullName: string
+  documentNumber: string
+  phone: string
+  status: 'ACTIVE' | 'INACTIVE' | 'ON_VACATION'
+  vehicle?: {
+    id: string
+    licensePlate: string
+    type: string
+    maxWeightKg: number
+    maxVolumeCm3: number
+    status: string
+  }
+}
+
+
 export interface Route {
   id: string
   date: string
@@ -44,4 +63,6 @@ export interface Route {
       type: string
     }
   }
+
+
 }

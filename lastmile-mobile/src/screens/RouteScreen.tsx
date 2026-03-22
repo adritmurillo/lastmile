@@ -7,15 +7,16 @@ import type { Stop } from '../types'
 
 interface Props {
   onSelectStop: (stop: Stop, routeId: string) => void
+  onProfile: () => void
 }
 
-export default function RouteScreen({ onSelectStop }: Props) {
+export default function RouteScreen({ onSelectStop, onProfile }: Props) {
   const {
     route, pendingStops, loading, refreshing, startingRoute, routeStarted,
     routeCompleted, onRefresh, handleSelectStop, handleStartRoute, openMapsWithAllStops,
     statusConfig, pendingCount, deliveredCount, progress,
     greeting, dateLabel, logout,
-  } = useRoute(onSelectStop)
+  } = useRoute(onSelectStop, onProfile)
 
   const renderStop = ({ item }: { item: Stop }) => {
     const config = statusConfig[item.status]
@@ -77,9 +78,14 @@ export default function RouteScreen({ onSelectStop }: Props) {
           <Text style={styles.greeting}>Hola, {greeting} 👋</Text>
           <Text style={styles.date}>{dateLabel}</Text>
         </View>
-        <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
-          <Text style={styles.logoutText}>Salir</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity onPress={onProfile} style={styles.profileBtn}>
+            <Text style={styles.profileBtnText}>👤</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={logout} style={styles.logoutBtn}>
+            <Text style={styles.logoutText}>Salir</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <FlatList
@@ -209,6 +215,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 20, paddingTop: 8, paddingBottom: 16,
   },
+  profileBtn: {
+  width: 36, height: 36, backgroundColor: '#f2f2f7',
+  borderRadius: 18, justifyContent: 'center', alignItems: 'center',
+},
+profileBtnText: { fontSize: 18 },
   greeting: { fontSize: 22, fontWeight: '700', color: '#1c1c1e', letterSpacing: -0.5 },
   date: { fontSize: 14, color: '#8e8e93', marginTop: 2, textTransform: 'capitalize' },
   logoutBtn: { paddingHorizontal: 14, paddingVertical: 7, backgroundColor: '#ffeeed', borderRadius: 20 },
@@ -279,22 +290,22 @@ const styles = StyleSheet.create({
   },
   noPendingRouteText: { fontSize: 14, color: '#e65100', lineHeight: 20 },
   completedBanner: {
-  backgroundColor: '#e8f8ed',
-  borderRadius: 12,
-  padding: 14,
-  alignItems: 'center',
-  borderWidth: 1,
-  borderColor: '#34c759',
-},
-completedBannerText: {
-  fontSize: 16,
-  fontWeight: '700',
-  color: '#34c759',
-  marginBottom: 4,
-},
-completedBannerSub: {
-  fontSize: 13,
-  color: '#8e8e93',
-  textAlign: 'center',
-},
+    backgroundColor: '#e8f8ed',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#34c759',
+  },
+  completedBannerText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#34c759',
+    marginBottom: 4,
+  },
+  completedBannerSub: {
+    fontSize: 13,
+    color: '#8e8e93',
+    textAlign: 'center',
+  },
 })
