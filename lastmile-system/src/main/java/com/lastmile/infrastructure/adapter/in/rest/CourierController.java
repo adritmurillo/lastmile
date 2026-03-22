@@ -156,4 +156,26 @@ public class CourierController {
         manageCouriersUseCase.updateFcmToken(id, body.get("token"));
         return ResponseEntity.ok(ApiResponse.ok("FCM token updated"));
     }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get courier by ID")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER', 'COURIER')")
+    public ResponseEntity<ApiResponse<CourierResponse>> getCourierById(@PathVariable UUID id){
+        return manageCouriersUseCase.getCourierById(id)
+                .map(courierDomainMapper :: toDto)
+                .map(courierRestMapper :: toResponse)
+                .map(ApiResponse::ok)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/phone")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
+    public ResponseEntity<ApiResponse<String>> updatePhone(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        manageCouriersUseCase.updatePhone(id, body.get("phone"));
+        return ResponseEntity.ok(ApiResponse.ok("Phone updated"));
+    }
+
 }

@@ -4,6 +4,7 @@ import com.lastmile.domain.model.Courier;
 import com.lastmile.domain.model.Vehicle;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface ManageCouriersUseCase {
@@ -17,4 +18,7 @@ public interface ManageCouriersUseCase {
     Courier updateCourier(Courier courier);
     List<Vehicle> getAllVehicles();
     void updateFcmToken(UUID courierId, String fcmToken);
+    Optional<Courier> getCourierById(UUID courierId);
+    void updatePhone(UUID courierId, String phone);
+
 }
