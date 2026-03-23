@@ -25,6 +25,7 @@ import java.util.UUID;
 @Component
 @RequiredArgsConstructor
 public class RouteRepositoryImpl implements RouteRepository {
+
     private final RouteJpaRepository routeJpaRepository;
     private final StopJpaRepository stopJpaRepository;
     private final RoutePersistenceMapper routeMapper;
@@ -32,6 +33,13 @@ public class RouteRepositoryImpl implements RouteRepository {
     private final StopPhotoJpaRepository stopPhotoJpaRepository;
     private final CourierJpaRepository courierJpaRepository;
 
+
+    @Override
+    public List<Route> findCompletedByCourier(UUID courierId) {
+        return routeMapper.toDomainList(
+                routeJpaRepository.findCompletedByCourier(courierId, LocalDate.now())
+        );
+    }
 
     @Override
     public Route save(Route route) {

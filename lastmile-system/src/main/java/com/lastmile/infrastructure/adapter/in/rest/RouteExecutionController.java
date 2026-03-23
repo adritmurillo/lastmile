@@ -141,4 +141,17 @@ public class RouteExecutionController {
         RouteDto route = routeDomainMapper.toDto(executeRouteUseCase.closeRoute(routeId, reason));
         return ResponseEntity.ok(ApiResponse.ok(routeRestMapper.toResponse(route)));
     }
+
+    @GetMapping("/my-history")
+    @Operation(summary = "Get courier's delivery history from previous days")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
+    public ResponseEntity<ApiResponse<List<RouteResponse>>> getMyHistory(
+            @RequestParam UUID courierId) {
+        List<RouteResponse> routes = executeRouteUseCase.getCourierHistory(courierId)
+                .stream()
+                .map(routeDomainMapper::toDto)
+                .map(routeRestMapper::toResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.ok(routes));
+    }
 }

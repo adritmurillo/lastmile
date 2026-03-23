@@ -24,6 +24,12 @@ import java.util.stream.Collectors;
 public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
 
     private final RouteRepository routeRepository;
+
+    @Override
+    public List<Route> getCourierHistory(UUID courierId) {
+        return routeRepository.findCompletedByCourier(courierId);
+    }
+
     private final OrderRepository orderRepository;
     private final NotificationPort notificationPort;
 

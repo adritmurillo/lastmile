@@ -21,4 +21,5 @@ public interface RouteRepository {
     List<Route> findRoutesByOrderId(UUID orderId);
     void saveStopPhotos(UUID stopId, List<String> photoUrls);
     List<String> getStopPhotos(UUID stopId);
+    List<Route> findCompletedByCourier(UUID courierId);
 }

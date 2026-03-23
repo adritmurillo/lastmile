@@ -68,4 +68,19 @@ public interface RouteJpaRepository extends JpaRepository<RouteEntity, UUID> {
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
 
+    @Query("""
+    SELECT DISTINCT r FROM RouteEntity r
+    LEFT JOIN FETCH r.stops s
+    LEFT JOIN FETCH s.order
+    LEFT JOIN FETCH r.courier c
+    LEFT JOIN FETCH c.vehicle
+    WHERE r.courier.id = :courierId
+    AND r.date < :today
+    AND r.status IN ('COMPLETED', 'IN_PROGRESS')
+    ORDER BY r.date DESC
+    """)
+    List<RouteEntity> findCompletedByCourier(
+            @Param("courierId") UUID courierId,
+            @Param("today") LocalDate today);
+
 }

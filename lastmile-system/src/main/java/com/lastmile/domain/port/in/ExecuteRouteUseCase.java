@@ -17,4 +17,5 @@ public interface ExecuteRouteUseCase {
     List<Route> getRoutesByDate(LocalDate date);
     List<Stop> getPendingStopsFromPreviousDays(UUID courierId);
     Route closeRoute(UUID routeId, String reason);
+    List<Route> getCourierHistory(UUID courierId);
 }
