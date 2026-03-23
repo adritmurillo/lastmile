@@ -24,8 +24,15 @@ import java.util.stream.Collectors;
 public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
 
     private final RouteRepository routeRepository;
+
+    @Override
+    public List<Route> getCourierHistory(UUID courierId) {
+        return routeRepository.findCompletedByCourier(courierId);
+    }
+
     private final OrderRepository orderRepository;
     private final NotificationPort notificationPort;
+
 
     @Override
     public Route getMyRouteForToday(UUID courierId) {
@@ -39,8 +46,14 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
         Route route = routeRepository.findById(routeId)
                 .orElseThrow(() -> new RouteNotFoundException(routeId));
 
+        if (route.getStatus() == RouteStatus.IN_PROGRESS || route.getStatus()==RouteStatus.COMPLETED){
+            log.info("Route {} already started, skipping", routeId);
+            return route;
+        }
+
         List<Order> inTransitOrders = route.getStops().stream()
                 .map(Stop::getOrder)
+                .filter(order -> order.getStatus() == OrderStatus.ASSIGNED)
                 .map(order -> order.withStatus(OrderStatus.IN_TRANSIT))
                 .collect(Collectors.toList());
 
@@ -57,20 +70,38 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
 
     @Override
     @Transactional
-    public Stop registerSuccessfulDelivery(UUID stopId, String proofPhotoUrl) {
+    public Stop registerSuccessfulDelivery(UUID stopId, List<String> photoUrls) {
         Stop stop = routeRepository.findStopById(stopId)
                 .orElseThrow(() -> new StopNotFoundException(stopId));
 
-        Stop delivered = stop.markAsDelivered(LocalDateTime.now(), proofPhotoUrl);
+        String firstPhotoUrl = photoUrls != null && !photoUrls.isEmpty() ? photoUrls.getFirst() : null;
+        Stop delivered = stop.markAsDelivered(LocalDateTime.now(), firstPhotoUrl);
 
         Order deliveredOrder = stop.getOrder().markAsDelivered();
         orderRepository.save(deliveredOrder);
-        notificationPort.notifyOrderDelivered(deliveredOrder);
 
-        log.info("Order {} successfully delivered at stop {}",
-                stop.getOrder().getTrackingCode(), stopId);
+        Stop savedStop = routeRepository.saveStop(delivered);
 
-        return routeRepository.saveStop(delivered);
+        if (photoUrls != null && !photoUrls.isEmpty()) {
+            routeRepository.saveStopPhotos(savedStop.getId(), photoUrls);
+        }
+
+        notificationPort.notifyOrderDelivered(deliveredOrder, delivered);
+
+        log.info("Order {} successfully delivered at stop {} with {} photos",
+                stop.getOrder().getTrackingCode(), stopId, photoUrls != null ? photoUrls.size() : 0);
+
+        routeRepository.findById(stop.getRouteId()).ifPresent(route -> {
+            boolean allDone = route.getStops().stream()
+                    .allMatch(s -> s.getId().equals(stopId) || s.getStatus() != StopStatus.PENDING);
+            if (allDone) {
+                Route completed = route.withStatus(RouteStatus.COMPLETED).withCompletedAt(LocalDateTime.now());
+                routeRepository.save(completed);
+                log.info("Route {} auto-completed.", route.getId());
+            }
+        });
+
+        return savedStop;
     }
 
     @Override
@@ -117,5 +148,25 @@ public class ExecuteRouteUseCaseImpl implements ExecuteRouteUseCase {
     @Override
     public List<Stop> getPendingStopsFromPreviousDays(UUID courierId) {
         return routeRepository.findPendingStopsByCourier(courierId);
+    }
+
+    @Override
+    @Transactional
+    public Route closeRoute(UUID routeId, String reason) {
+        Route route = routeRepository.findById(routeId)
+                .orElseThrow(() -> new RouteNotFoundException(routeId));
+
+        long pendingCount = route.getStops().stream()
+                .filter(s -> s.getStatus() == StopStatus.PENDING)
+                .count();
+
+        Route closed = route
+                .withStatus(RouteStatus.COMPLETED)
+                .withCompletedAt(LocalDateTime.now());
+
+        log.info("Route {} force-closed by dispatcher. Reason: {}. Pending stops left: {}",
+                routeId, reason, pendingCount);
+
+        return routeRepository.save(closed);
     }
 }

@@ -13,12 +13,14 @@ import java.util.UUID;
 @With
 public class Courier {
     private final UUID id;
+    private final UUID userId;
     private final String firstName;
     private final String lastName;
     private final String documentNumber;
     private final String phone;
     private final CourierStatus status;
     private final Vehicle vehicle;
+    private final String fcmToken;
     private final LocalDateTime createdAt;
 
     public String getFullName(){

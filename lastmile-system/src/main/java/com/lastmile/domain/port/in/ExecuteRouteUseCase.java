@@ -11,10 +11,11 @@ import java.util.UUID;
 public interface ExecuteRouteUseCase {
     Route getMyRouteForToday(UUID courierId);
     Route startRoute(UUID routeId);
-    Stop registerSuccessfulDelivery(UUID stopId, String proofPhotoUrl);
+    Stop registerSuccessfulDelivery(UUID stopId, List<String> photoUrls);
     Stop registerFailedDelivery(UUID stopId, FailureReason reason, String failureNotes);
     Route completeRoute(UUID routeId);
     List<Route> getRoutesByDate(LocalDate date);
     List<Stop> getPendingStopsFromPreviousDays(UUID courierId);
-
+    Route closeRoute(UUID routeId, String reason);
+    List<Route> getCourierHistory(UUID courierId);
 }

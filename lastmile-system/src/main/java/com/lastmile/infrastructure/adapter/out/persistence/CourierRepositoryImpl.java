@@ -6,6 +6,7 @@ import com.lastmile.infrastructure.adapter.out.persistence.mapper.CourierPersist
 import com.lastmile.infrastructure.adapter.out.persistence.repository.CourierJpaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +19,7 @@ public class CourierRepositoryImpl implements CourierRepository {
     private final CourierPersistenceMapper mapper;
 
     @Override
+    @Transactional
     public Courier save(Courier courier) {
         return mapper.toDomain(jpaRepository.save(mapper.toEntity(courier)));
     }

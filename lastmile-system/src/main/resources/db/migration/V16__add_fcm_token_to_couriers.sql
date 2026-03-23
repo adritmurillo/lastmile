@@ -1,0 +1,1 @@
+ALTER TABLE couriers ADD COLUMN fcm_token TEXT;

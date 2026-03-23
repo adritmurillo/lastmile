@@ -8,6 +8,7 @@ import type { Order } from '../types'
 
 const statusColors: Record<string, string> = {
   PENDING: 'gold',
+  READY_TO_DISPATCH: 'cyan',
   ASSIGNED: 'blue',
   IN_TRANSIT: 'purple',
   DELIVERED: 'green',
@@ -18,6 +19,7 @@ const statusColors: Record<string, string> = {
 
 const statusLabels: Record<string, string> = {
   PENDING: 'Pendiente',
+  READY_TO_DISPATCH: 'Listo para despachar',
   ASSIGNED: 'Asignado',
   IN_TRANSIT: 'En tránsito',
   DELIVERED: 'Entregado',
@@ -37,6 +39,7 @@ export default function OrdersPage() {
   const allOrdersRef = useRef<Order[]>([])
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
+  const [proofPhotoUrls, setProofPhotoUrls] = useState<string[]>([])
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -61,6 +64,20 @@ export default function OrdersPage() {
     setModalOpen(false)
     form.resetFields()
     fetchOrders()
+  }
+
+  const handleViewOrder = async (order: Order) => {
+    setSelectedOrder(order)
+    setDetailModalOpen(true)
+    setProofPhotoUrls([])
+    if (order.status === 'DELIVERED') {
+      try {
+        const res = await ordersApi.getProofPhotos(order.id)
+        setProofPhotoUrls(res.data ?? [])
+      } catch {
+        setProofPhotoUrls([])
+      }
+    }
   }
 
   const columns: ColumnsType<Order> = [
@@ -110,21 +127,30 @@ export default function OrdersPage() {
       key: 'actions',
       render: (_, record) => (
         <Space>
-          <Button size="small" onClick={() => {
-            setSelectedOrder(record)
-            setDetailModalOpen(true)
-          }}>Ver</Button>
-          {record.status !== 'DELIVERED' && record.status !== 'CANCELLED' && (
-            <Button size="small" danger onClick={async () => {
+          <Button size="small" onClick={() => handleViewOrder(record)}>Ver</Button>
+          {record.status === 'PENDING' && (
+            <Button size="small" type="primary" onClick={async () => {
               try {
-                await ordersApi.cancelOrder(record.id)
-                messageApi.success('Orden cancelada')
+                await ordersApi.receiveOrder(record.id)
+                messageApi.success('Paquete recibido en almacén')
                 fetchOrders()
               } catch {
-                messageApi.error('No se puede cancelar esta orden')
+                messageApi.error('No se pudo actualizar la orden')
               }
-            }}>Cancelar</Button>
+            }}>Recibido</Button>
           )}
+          {record.status !== 'DELIVERED' && record.status !== 'CANCELLED'
+            && record.status !== 'RETURNED' && (
+              <Button size="small" danger onClick={async () => {
+                try {
+                  await ordersApi.cancelOrder(record.id)
+                  messageApi.success('Orden cancelada')
+                  fetchOrders()
+                } catch {
+                  messageApi.error('No se puede cancelar esta orden')
+                }
+              }}>Cancelar</Button>
+            )}
         </Space>
       )
     }
@@ -269,6 +295,7 @@ export default function OrdersPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             <div><strong>Destinatario:</strong> {selectedOrder.recipientName}</div>
             <div><strong>Teléfono:</strong> {selectedOrder.recipientPhone}</div>
+            <div><strong>Email:</strong> {selectedOrder.recipientEmail ?? '—'}</div>
             <div><strong>Dirección:</strong> {selectedOrder.addressText}</div>
             <div><strong>Peso:</strong> {selectedOrder.weightKg} kg</div>
             <div><strong>Volumen:</strong> {selectedOrder.volumeCm3} cm³</div>
@@ -277,6 +304,22 @@ export default function OrdersPage() {
             <div><strong>Intentos:</strong> {selectedOrder.deliveryAttempts}/3</div>
             <div><strong>Fecha límite:</strong> {dayjs(selectedOrder.deliveryDeadline).format('DD/MM/YYYY')}</div>
             <div><strong>Creado:</strong> {dayjs(selectedOrder.createdAt).format('DD/MM/YYYY HH:mm')}</div>
+            {proofPhotoUrls.length > 0 && (
+              <div>
+                <strong>Fotos de entrega:</strong>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                  {proofPhotoUrls.map((url, i) => (
+                    <img
+                      key={i}
+                      src={url}
+                      alt={`Foto ${i + 1}`}
+                      style={{ width: '100%', borderRadius: 8, cursor: 'pointer' }}
+                      onClick={() => window.open(url, '_blank')}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </Modal>

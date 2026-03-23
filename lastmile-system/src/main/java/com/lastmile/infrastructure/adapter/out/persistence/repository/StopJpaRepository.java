@@ -36,6 +36,13 @@ public interface StopJpaRepository extends JpaRepository<StopEntity, UUID> {
     AND o.deliveryAttempts < 3
     AND r.date < :today
     AND r.status != 'CANCELLED'
+    AND NOT EXISTS (
+        SELECT 1 FROM StopEntity s2
+        JOIN s2.route r2
+        WHERE s2.order.id = o.id
+        AND s2.status = 'PENDING'
+        AND r2.date >= :today
+    )
     ORDER BY r.date ASC
     """)
     List<StopEntity> findPendingByCourierBeforeDate(

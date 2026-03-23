@@ -1,5 +1,6 @@
 import {
   ActivityIndicator,
+  Image,
   KeyboardAvoidingView,
   Modal, Platform, SafeAreaView,
   ScrollView, StatusBar, StyleSheet, Text, TextInput,
@@ -17,9 +18,10 @@ interface Props {
 
 export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: Props) {
   const {
-    loading, failModalOpen, selectedReason, setSelectedReason,
+    loading, uploadingPhoto, photoUris, failModalOpen, selectedReason, setSelectedReason,
     failureNotes, setFailureNotes,
-    handleDeliver, handleFail, handleCall, handleMaps,
+    handleDeliver, handleFail, handleCall, handleWhatsApp, handleMaps, handleTakePhoto,
+    handleRemovePhoto,
     openFailModal, closeFailModal,
   } = useStopDetail(stop, onComplete)
 
@@ -39,29 +41,26 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
+
+        {/* Destinatario */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>DESTINATARIO</Text>
           <Text style={styles.recipientName}>{stop.order.recipientName}</Text>
           <Text style={styles.tracking}>{stop.order.trackingCode}</Text>
         </View>
 
+        {/* Dirección */}
         <View style={styles.card}>
           <Text style={styles.cardLabel}>DIRECCIÓN</Text>
           <Text style={styles.address}>{stop.order.addressText}</Text>
           <TouchableOpacity style={styles.mapsBtn} onPress={handleMaps}>
-            <Text style={styles.mapsBtnText}>📍 Abrir en Mapas</Text>
+            <Text style={styles.mapsBtnText}>📍 Navegar</Text>
           </TouchableOpacity>
         </View>
 
+        {/* Info */}
         <View style={styles.card}>
           <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Text style={styles.infoLabel}>Teléfono</Text>
-              <TouchableOpacity onPress={handleCall}>
-                <Text style={styles.infoValueLink}>{stop.order.recipientPhone}</Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.infoDivider} />
             <View style={styles.infoItem}>
               <Text style={styles.infoLabel}>Prioridad</Text>
               <Text style={[styles.infoValue, { color: stop.order.priority === 'EXPRESS' ? '#ff3b30' : '#007aff' }]}>
@@ -76,11 +75,61 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
           </View>
         </View>
 
+        {/* Contacto */}
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>CONTACTAR</Text>
+          <Text style={styles.phoneText}>{stop.order.recipientPhone}</Text>
+          <View style={styles.contactRow}>
+            <TouchableOpacity style={styles.contactBtn} onPress={handleCall} activeOpacity={0.7}>
+              <Text style={styles.contactBtnEmoji}>📞</Text>
+              <Text style={styles.contactBtnText}>Llamar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.contactBtn, styles.whatsappBtn]} onPress={handleWhatsApp} activeOpacity={0.7}>
+              <Text style={styles.contactBtnEmoji}>💬</Text>
+              <Text style={[styles.contactBtnText, styles.whatsappText]}>WhatsApp</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* Foto de entrega */}
+        <View style={styles.card}>
+          <Text style={styles.cardLabel}>FOTOS DE ENTREGA</Text>
+
+          {photoUris.length > 0 && (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {photoUris.map((uri, index) => (
+                  <View key={index} style={styles.photoThumbContainer}>
+                    <Image source={{ uri }} style={styles.photoThumb} resizeMode="cover" />
+                    <TouchableOpacity
+                      style={styles.photoRemoveBtn}
+                      onPress={() => handleRemovePhoto(index)}
+                    >
+                      <Text style={styles.photoRemoveText}>✕</Text>
+                    </TouchableOpacity>
+                  </View>
+                ))}
+              </View>
+            </ScrollView>
+          )}
+
+          <TouchableOpacity style={styles.photoBtn} onPress={handleTakePhoto} activeOpacity={0.7}>
+            <Text style={styles.photoBtnEmoji}>📷</Text>
+            <Text style={styles.photoBtnText}>
+              {photoUris.length === 0 ? 'Tomar foto de entrega' : '+ Agregar otra foto'}
+            </Text>
+            {photoUris.length === 0 && <Text style={styles.photoBtnSub}>Opcional pero recomendado</Text>}
+          </TouchableOpacity>
+        </View>
+
+        {/* Acciones */}
         <View style={styles.actions}>
           <TouchableOpacity style={styles.deliverBtn} onPress={handleDeliver} disabled={loading} activeOpacity={0.85}>
             {loading
               ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.deliverBtnText}>✓ Entrega exitosa</Text>
+              : <Text style={styles.deliverBtnText}>
+                {uploadingPhoto ? '⬆️ Subiendo foto...' : '✓ Entrega exitosa'}
+              </Text>
             }
           </TouchableOpacity>
           <TouchableOpacity style={styles.failBtn} onPress={openFailModal} disabled={loading} activeOpacity={0.85}>
@@ -90,19 +139,13 @@ export default function StopDetailScreen({ stop, routeId, onBack, onComplete }: 
       </ScrollView>
 
       <Modal visible={failModalOpen} transparent animationType="slide">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={{ flex: 1 }}
-        >
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalCard}>
               <Text style={styles.modalTitle}>¿Por qué falló la entrega?</Text>
               <Text style={styles.modalSubtitle}>Selecciona el motivo</Text>
 
-              <ScrollView
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
-              >
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
                 <View style={styles.reasonsContainer}>
                   {FAILURE_REASONS.map(({ key, label, emoji }) => (
                     <TouchableOpacity
@@ -178,12 +221,35 @@ const styles = StyleSheet.create({
   address: { fontSize: 16, color: '#1c1c1e', lineHeight: 22, marginBottom: 12 },
   mapsBtn: { backgroundColor: '#f2f2f7', borderRadius: 10, padding: 10, alignItems: 'center' },
   mapsBtnText: { fontSize: 14, color: '#007aff', fontWeight: '500' },
+  photoPreview: {
+    width: '100%', height: 200, borderRadius: 12, marginBottom: 10,
+  },
+  retakeBtn: {
+    backgroundColor: '#f2f2f7', borderRadius: 10, padding: 10, alignItems: 'center',
+  },
+  retakeBtnText: { fontSize: 14, color: '#007aff', fontWeight: '500' },
+  photoBtn: {
+    backgroundColor: '#f2f2f7', borderRadius: 12, padding: 20,
+    alignItems: 'center', gap: 4,
+  },
+  photoBtnEmoji: { fontSize: 32, marginBottom: 4 },
+  photoBtnText: { fontSize: 15, fontWeight: '600', color: '#1c1c1e' },
+  photoBtnSub: { fontSize: 13, color: '#8e8e93' },
   infoRow: { flexDirection: 'row', justifyContent: 'space-around' },
   infoItem: { alignItems: 'center', flex: 1 },
   infoLabel: { fontSize: 11, color: '#8e8e93', marginBottom: 4, fontWeight: '500' },
   infoValue: { fontSize: 15, fontWeight: '600', color: '#1c1c1e' },
-  infoValueLink: { fontSize: 15, fontWeight: '600', color: '#007aff' },
   infoDivider: { width: StyleSheet.hairlineWidth, backgroundColor: '#e5e5ea' },
+  phoneText: { fontSize: 17, fontWeight: '600', color: '#1c1c1e', marginBottom: 12 },
+  contactRow: { flexDirection: 'row', gap: 10 },
+  contactBtn: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
+    gap: 6, backgroundColor: '#f2f2f7', borderRadius: 12, paddingVertical: 12,
+  },
+  whatsappBtn: { backgroundColor: '#e8f8ed' },
+  contactBtnEmoji: { fontSize: 18 },
+  contactBtnText: { fontSize: 15, fontWeight: '600', color: '#007aff' },
+  whatsappText: { color: '#34c759' },
   actions: { gap: 10, marginTop: 8 },
   deliverBtn: {
     backgroundColor: '#34c759', borderRadius: 14, paddingVertical: 16, alignItems: 'center',
@@ -221,4 +287,18 @@ const styles = StyleSheet.create({
   modalConfirmBtn: { flex: 1, backgroundColor: '#ff3b30', borderRadius: 12, paddingVertical: 14, alignItems: 'center' },
   modalConfirmBtnDisabled: { backgroundColor: '#ffb3b0' },
   modalConfirmText: { fontSize: 16, fontWeight: '600', color: '#fff' },
+  photoThumbContainer: {
+    position: 'relative', width: 100, height: 100,
+  },
+  photoThumb: {
+    width: 100, height: 100, borderRadius: 10,
+  },
+  photoRemoveBtn: {
+    position: 'absolute', top: 4, right: 4,
+    backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 10,
+    width: 20, height: 20, alignItems: 'center', justifyContent: 'center',
+  },
+  photoRemoveText: {
+    color: '#fff', fontSize: 11, fontWeight: '700',
+  },
 })

@@ -46,12 +46,13 @@ public interface RouteJpaRepository extends JpaRepository<RouteEntity, UUID> {
     @Query("""
     SELECT DISTINCT r FROM RouteEntity r
     LEFT JOIN FETCH r.stops s
-    LEFT JOIN FETCH s.order o
+    LEFT JOIN FETCH s.order
     LEFT JOIN FETCH r.courier c
     LEFT JOIN FETCH c.vehicle
-    WHERE o.id = :orderId
+    WHERE s.order.id = :orderId
+    ORDER BY r.date DESC
     """)
-    Optional<RouteEntity> findByOrderId(@Param("orderId") UUID orderId);
+    List<RouteEntity> findByOrderId(@Param("orderId") UUID orderId);
 
     @Query("""
     SELECT DISTINCT r FROM RouteEntity r
@@ -66,5 +67,20 @@ public interface RouteJpaRepository extends JpaRepository<RouteEntity, UUID> {
     List<RouteEntity> findByDateRangeWithDetails(
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
+
+    @Query("""
+    SELECT DISTINCT r FROM RouteEntity r
+    LEFT JOIN FETCH r.stops s
+    LEFT JOIN FETCH s.order
+    LEFT JOIN FETCH r.courier c
+    LEFT JOIN FETCH c.vehicle
+    WHERE r.courier.id = :courierId
+    AND r.date < :today
+    AND r.status IN ('COMPLETED', 'IN_PROGRESS')
+    ORDER BY r.date DESC
+    """)
+    List<RouteEntity> findCompletedByCourier(
+            @Param("courierId") UUID courierId,
+            @Param("today") LocalDate today);
 
 }

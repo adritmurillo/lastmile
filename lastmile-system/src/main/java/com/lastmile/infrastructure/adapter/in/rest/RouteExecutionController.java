@@ -96,7 +96,7 @@ public class RouteExecutionController {
 
         StopDto stop = routeDomainMapper.toStopDto(
                 executeRouteUseCase.registerSuccessfulDelivery(
-                        stopId, request.getProofPhotoUrl()));
+                        stopId, request.getPhotoUrls()));
 
         return ResponseEntity.ok(ApiResponse.ok(routeRestMapper.toStopResponse(stop)));
     }
@@ -129,5 +129,29 @@ public class RouteExecutionController {
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(ApiResponse.ok(stops));
+    }
+
+    @PostMapping("/{routeId}/close")
+    @Operation(summary = "Force close a route", description = "Dispatcher closes an incomplete route at end of day")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
+    public ResponseEntity<ApiResponse<RouteResponse>> closeRoute(
+            @PathVariable UUID routeId,
+            @RequestParam String reason) {
+
+        RouteDto route = routeDomainMapper.toDto(executeRouteUseCase.closeRoute(routeId, reason));
+        return ResponseEntity.ok(ApiResponse.ok(routeRestMapper.toResponse(route)));
+    }
+
+    @GetMapping("/my-history")
+    @Operation(summary = "Get courier's delivery history from previous days")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
+    public ResponseEntity<ApiResponse<List<RouteResponse>>> getMyHistory(
+            @RequestParam UUID courierId) {
+        List<RouteResponse> routes = executeRouteUseCase.getCourierHistory(courierId)
+                .stream()
+                .map(routeDomainMapper::toDto)
+                .map(routeRestMapper::toResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.ok(routes));
     }
 }

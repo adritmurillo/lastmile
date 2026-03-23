@@ -38,11 +38,14 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/auth/**",
                                 "/api/v1/orders/tracking/**",
+                                "/api/v1/orders/proof-photo/**",
                                 "/api/v1/webhook/**",
                                 "/tracking.html",
+                                "/favicon.ico",
                                 "/swagger-ui.html",
                                 "/swagger-ui/**",
                                 "/api-docs/**",
+                                "/api/v1/orders/proof-photos/**",
                                 "/webjars/**"
                         ).permitAll()
                         .anyRequest().authenticated()

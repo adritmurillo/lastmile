@@ -20,7 +20,10 @@ public class OrderResponse {
     private final String platformOrderNumber;
     private final String recipientName;
     private final String recipientPhone;
+    private final String recipientEmail;
     private final String addressText;
+    private final Double latitude;
+    private final Double longitude;
     private final Double weightKg;
     private final Double volumeCm3;
     private final OrderPriority priority;

@@ -242,42 +242,67 @@
             const status = STATUS_CONFIG[order.status] || STATUS_CONFIG.PENDING;
             const priority = PRIORITY_CONFIG[order.priority] || PRIORITY_CONFIG.STANDARD;
 
+            // Buscar foto si está entregado
+            let proofPhotoUrls = [];
+if (order.status === 'DELIVERED') {
+    try {
+        const photoRes = await fetch(`http://localhost:8080/api/v1/orders/proof-photos/${order.id}`);
+        const photoJson = await photoRes.json();
+        proofPhotoUrls = photoJson.data ?? [];
+    } catch { }
+}
+
+const photoSection = proofPhotoUrls.length > 0 ? `
+    <div style="margin-bottom:24px;">
+        <div style="font-size:11px;color:#999;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">
+            📷 Fotos de entrega (${proofPhotoUrls.length})
+        </div>
+        ${proofPhotoUrls.map((url, i) => `
+            <img src="${url}" alt="Foto ${i+1}"
+                 style="width:100%;border-radius:8px;border:1px solid #e0e0e0;cursor:pointer;margin-bottom:8px;"
+                 onclick="window.open('${url}', '_blank')" />
+        `).join('')}
+        <div style="font-size:11px;color:#999;margin-top:4px;text-align:center;">Haz clic en cada foto para ampliar</div>
+    </div>
+` : '';
+
             const card = document.getElementById('resultCard');
             card.style.display = 'block';
             startPolling();
             card.innerHTML = `
-        <div class="card-header" style="background:${status.bg}; border-bottom: 1px solid #eee;">
-          <span style="font-size:24px">${status.icon}</span>
-          <span class="tracking-code" style="color:#1a1a2e">${order.trackingCode}</span>
-          <span class="badge" style="background:${status.color}20; color:${status.color}">${status.label}</span>
-        </div>
-        <div class="card-body">
-          <div class="info-grid" style="margin-top:20px">
-            <div class="info-item">
-              <div class="info-label">👤 Destinatario</div>
-              <div class="info-value">${order.recipientName}</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">📅 Fecha límite</div>
-              <div class="info-value">${formatDate(order.deliveryDeadline)}</div>
-            </div>
-            <div class="info-item" style="grid-column: span 2">
-              <div class="info-label">📍 Dirección</div>
-              <div class="info-value">${order.addressText}</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">⚡ Prioridad</div>
-              <div class="info-value" style="color:${priority.color};font-weight:600">${priority.label}</div>
-            </div>
-            <div class="info-item">
-              <div class="info-label">🔄 Intentos</div>
-              <div class="info-value">${order.deliveryAttempts} de 3</div>
-            </div>
-          </div>
-          <div class="timeline-title">Historial del pedido</div>
-          <ul class="timeline">${buildTimeline(order)}</ul>
-        </div>
-      `;
+                <div class="card-header" style="background:${status.bg}; border-bottom: 1px solid #eee;">
+                  <span style="font-size:24px">${status.icon}</span>
+                  <span class="tracking-code" style="color:#1a1a2e">${order.trackingCode}</span>
+                  <span class="badge" style="background:${status.color}20; color:${status.color}">${status.label}</span>
+                </div>
+                <div class="card-body">
+                  <div class="info-grid" style="margin-top:20px">
+                    <div class="info-item">
+                      <div class="info-label">👤 Destinatario</div>
+                      <div class="info-value">${order.recipientName}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">📅 Fecha límite</div>
+                      <div class="info-value">${formatDate(order.deliveryDeadline)}</div>
+                    </div>
+                    <div class="info-item" style="grid-column: span 2">
+                      <div class="info-label">📍 Dirección</div>
+                      <div class="info-value">${order.addressText}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">⚡ Prioridad</div>
+                      <div class="info-value" style="color:${priority.color};font-weight:600">${priority.label}</div>
+                    </div>
+                    <div class="info-item">
+                      <div class="info-label">🔄 Intentos</div>
+                      <div class="info-value">${order.deliveryAttempts} de 3</div>
+                    </div>
+                  </div>
+                  ${photoSection}
+                  <div class="timeline-title">Historial del pedido</div>
+                  <ul class="timeline">${buildTimeline(order)}</ul>
+                </div>
+            `;
         } catch (e) {
             document.getElementById('loading').style.display = 'none';
             document.getElementById('errorText').textContent = 'Error al conectar con el servidor.';

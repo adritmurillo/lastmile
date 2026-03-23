@@ -18,4 +18,8 @@ public interface RouteRepository {
     Optional<Route> findRouteByOrderId(UUID orderId);
     List<Route> findByDateRange(LocalDate startDate, LocalDate endDate);
     List<Stop> findPendingStopsByCourier(UUID courierId);
+    List<Route> findRoutesByOrderId(UUID orderId);
+    void saveStopPhotos(UUID stopId, List<String> photoUrls);
+    List<String> getStopPhotos(UUID stopId);
+    List<Route> findCompletedByCourier(UUID courierId);
 }

@@ -21,6 +21,10 @@ import com.itextpdf.kernel.pdf.canvas.draw.SolidLine;
 import com.lastmile.domain.model.Order;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import com.itextpdf.io.image.ImageDataFactory;
+import com.itextpdf.layout.element.Image;
+import java.net.URL;
+import java.util.List;
 
 import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
@@ -36,7 +40,7 @@ public class DeliveryVoucherPdfGenerator {
     private static final DeviceRgb GRAY_TEXT  = new DeviceRgb(100, 100, 120);
     private static final DeviceRgb BORDER     = new DeviceRgb(220, 220, 230);
 
-    public byte[] generate(Order order) {
+    public byte[] generate(Order order, List<String> photoUrls) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PdfWriter writer = new PdfWriter(baos);
@@ -113,6 +117,41 @@ public class DeliveryVoucherPdfGenerator {
             line.setColor(BORDER);
             document.add(new LineSeparator(line));
             document.add(new Paragraph(" "));
+
+            // ── PROOF PHOTOS ─────────────────────────────────────
+            if (photoUrls != null && !photoUrls.isEmpty()) {
+                document.add(new Paragraph(" "));
+                document.add(new Paragraph("FOTOS DE ENTREGA")
+                        .setFont(bold).setFontSize(9)
+                        .setFontColor(GRAY_TEXT)
+                        .setCharacterSpacing(2)
+                        .setTextAlignment(TextAlignment.CENTER)
+                        .setMarginBottom(8));
+
+                for (int i = 0; i < photoUrls.size(); i++) {
+                    try {
+                        Image img = new Image(ImageDataFactory.create(new URL(photoUrls.get(i))))
+                                .setWidth(UnitValue.createPercentValue(100))
+                                .setMarginBottom(8);
+                        document.add(img);
+
+                        if (photoUrls.size() > 1) {
+                            document.add(new Paragraph("Foto " + (i + 1) + " de " + photoUrls.size())
+                                    .setFont(regular).setFontSize(8)
+                                    .setFontColor(GRAY_TEXT)
+                                    .setTextAlignment(TextAlignment.CENTER)
+                                    .setMarginBottom(8));
+                        }
+                    } catch (Exception e) {
+                        log.warn("Could not load photo {} for order {}: {}", i + 1, order.getTrackingCode(), e.getMessage());
+                    }
+                }
+
+                document.add(new Paragraph(" "));
+                SolidLine line2 = new SolidLine(1f);
+                line2.setColor(BORDER);
+                document.add(new LineSeparator(line2));
+            }
 
             // ── FOOTER ───────────────────────────────────────────
             document.add(new Paragraph("Gracias por confiar en Last Mile Delivery.")

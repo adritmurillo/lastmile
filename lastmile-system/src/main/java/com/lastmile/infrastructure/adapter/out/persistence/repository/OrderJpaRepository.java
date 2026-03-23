@@ -25,11 +25,10 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
     @Query("""
     SELECT o FROM OrderEntity o
     WHERE (
-        o.status = 'PENDING'
-        OR o.status = 'ASSIGNED'
+        o.status = 'READY_TO_DISPATCH'
         OR (o.status = 'FAILED' AND o.deliveryAttempts < 3)
     )
-    ORDER BY o.priority ASC, o.createdAt ASC
+    ORDER BY o.priority ASC, o.deliveryDeadline ASC, o.createdAt ASC
     """)
     List<OrderEntity> findPendingOrdersForDate(@Param("date") LocalDate date);
 

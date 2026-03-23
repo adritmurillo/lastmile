@@ -1,5 +1,6 @@
 package com.lastmile.infrastructure.adapter.out.persistence.entity;
 
+import com.lastmile.domain.model.RouteCloseReason;
 import com.lastmile.domain.model.RouteStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -53,4 +54,11 @@ public class RouteEntity {
     @OrderBy("stopOrder ASC")
     @Builder.Default
     private List<StopEntity> stops = new ArrayList<>();
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "close_reason")
+    private RouteCloseReason closeReason;
+
+    @Column(name = "close_notes")
+    private String closeNotes;
 }

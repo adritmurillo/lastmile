@@ -19,5 +19,6 @@ public class StopDto {
     private final LocalDateTime actualArrival;
     private final StopStatus status;
     private final FailureReason failureReason;
+    private final String failureNotes;
     private final String proofPhotoUrl;
 }

@@ -22,6 +22,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Slf4j
@@ -146,4 +147,35 @@ public class CourierController {
                 manageCouriersUseCase.getAllVehicles());
         return ResponseEntity.ok(ApiResponse.ok(courierRestMapper.toVehicleResponseList(vehicles)));
     }
+
+    @PostMapping("/{id}/fcm-token")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
+    public ResponseEntity<ApiResponse<String>> updateFcmToken(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        manageCouriersUseCase.updateFcmToken(id, body.get("token"));
+        return ResponseEntity.ok(ApiResponse.ok("FCM token updated"));
+    }
+
+    @GetMapping("/{id}")
+    @Operation(summary = "Get courier by ID")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER', 'COURIER')")
+    public ResponseEntity<ApiResponse<CourierResponse>> getCourierById(@PathVariable UUID id){
+        return manageCouriersUseCase.getCourierById(id)
+                .map(courierDomainMapper :: toDto)
+                .map(courierRestMapper :: toResponse)
+                .map(ApiResponse::ok)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PatchMapping("/{id}/phone")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
+    public ResponseEntity<ApiResponse<String>> updatePhone(
+            @PathVariable UUID id,
+            @RequestBody Map<String, String> body) {
+        manageCouriersUseCase.updatePhone(id, body.get("phone"));
+        return ResponseEntity.ok(ApiResponse.ok("Phone updated"));
+    }
+
 }
