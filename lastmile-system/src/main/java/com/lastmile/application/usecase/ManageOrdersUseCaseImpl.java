@@ -111,8 +111,8 @@ public class ManageOrdersUseCaseImpl implements ManageOrdersUseCase {
             if (updatedStops.isEmpty()) {
                 routeRepository.save(route
                         .withStops(updatedStops)
-                        .withStatus(RouteStatus.CANCELLED));
-                log.info("Route {} cancelled because it has no more stops", route.getId());
+                        .withStatus(RouteStatus.CLOSED));
+                log.info("Route {} closed because it has no more stops", route.getId());
             } else {
                 routeRepository.save(route.withStops(updatedStops));
             }
@@ -144,6 +144,27 @@ public class ManageOrdersUseCaseImpl implements ManageOrdersUseCase {
 
         Order updated = order.withStatus(OrderStatus.READY_TO_DISPATCH);
         log.info("Order {} marked as READY_TO_DISPATCH", order.getTrackingCode());
+
+        return orderRepository.save(updated);
+    }
+
+    @Override
+    public List<Order> getReturnedToWarehouseOrders() {
+        return orderRepository.findByStatus(OrderStatus.RETURNED_TO_WAREHOUSE);
+    }
+
+    @Override
+    @Transactional
+    public Order confirmReturnReceived(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new RuntimeException("Order not found: " + orderId));
+
+        if (order.getStatus() != OrderStatus.RETURNED_TO_WAREHOUSE) {
+            throw new RuntimeException("Order must be RETURNED_TO_WAREHOUSE to confirm return. Current status: " + order.getStatus());
+        }
+
+        Order updated = order.withStatus(OrderStatus.READY_TO_DISPATCH);
+        log.info("Order {} confirmed as returned to warehouse, now READY_TO_DISPATCH", order.getTrackingCode());
 
         return orderRepository.save(updated);
     }

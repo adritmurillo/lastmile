@@ -34,8 +34,9 @@ public interface OrderJpaRepository extends JpaRepository<OrderEntity, UUID> {
 
     @Query("""
             SELECT o FROM OrderEntity o
-            WHERE o.status = 'FAILED'
-            AND o.deliveryAttempts < 3
+            WHERE (o.status = 'FAILED' AND o.deliveryAttempts < 3)
+               OR o.status = 'SKIPPED'
+               OR o.status = 'RETURNED_TO_WAREHOUSE'
             """)
     List<OrderEntity> findReschedulableFailedOrders();
 

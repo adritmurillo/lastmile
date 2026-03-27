@@ -5,5 +5,6 @@ public enum FailureReason {
     INCORRECT_ADDRESS,
     CUSTOMER_REJECTED,
     INACCESSIBLE_AREA,
+    ROUTE_CLOSED,
     OTHER
 }

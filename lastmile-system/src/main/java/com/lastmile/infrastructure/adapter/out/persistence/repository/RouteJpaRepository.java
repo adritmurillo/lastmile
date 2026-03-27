@@ -24,6 +24,16 @@ public interface RouteJpaRepository extends JpaRepository<RouteEntity, UUID> {
         LEFT JOIN FETCH s.order
         LEFT JOIN FETCH r.courier c
         LEFT JOIN FETCH c.vehicle
+        WHERE r.id = :id
+        """)
+    Optional<RouteEntity> findByIdWithDetails(@Param("id") UUID id);
+
+    @Query("""
+        SELECT DISTINCT r FROM RouteEntity r
+        LEFT JOIN FETCH r.stops s
+        LEFT JOIN FETCH s.order
+        LEFT JOIN FETCH r.courier c
+        LEFT JOIN FETCH c.vehicle
         WHERE r.courier.id = :courierId
         AND r.date = :date
         AND r.status IN ('PENDING','CONFIRMED','IN_PROGRESS')
@@ -62,7 +72,7 @@ public interface RouteJpaRepository extends JpaRepository<RouteEntity, UUID> {
     LEFT JOIN FETCH c.vehicle
     WHERE r.date >= :startDate
     AND r.date <= :endDate
-    AND r.status != 'CANCELLED'
+    AND r.status NOT IN ('CLOSED')
     """)
     List<RouteEntity> findByDateRangeWithDetails(
             @Param("startDate") LocalDate startDate,
@@ -82,5 +92,19 @@ public interface RouteJpaRepository extends JpaRepository<RouteEntity, UUID> {
     List<RouteEntity> findCompletedByCourier(
             @Param("courierId") UUID courierId,
             @Param("today") LocalDate today);
+
+    /**
+     * Finds all routes that are still incomplete (CONFIRMED or IN_PROGRESS).
+     * Used by the auto-close job to close routes at end of day.
+     */
+    @Query("""
+    SELECT DISTINCT r FROM RouteEntity r
+    LEFT JOIN FETCH r.stops s
+    LEFT JOIN FETCH s.order
+    LEFT JOIN FETCH r.courier c
+    LEFT JOIN FETCH c.vehicle
+    WHERE r.status IN ('CONFIRMED', 'IN_PROGRESS')
+    """)
+    List<RouteEntity> findIncompleteRoutes();
 
 }

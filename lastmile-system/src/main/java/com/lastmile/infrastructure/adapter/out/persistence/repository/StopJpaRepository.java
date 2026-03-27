@@ -32,16 +32,16 @@ public interface StopJpaRepository extends JpaRepository<StopEntity, UUID> {
     LEFT JOIN FETCH r.courier c
     WHERE c.id = :courierId
     AND s.status = 'PENDING'
-    AND o.status != 'RETURNED'
+    AND o.status NOT IN ('RETURNED', 'DELIVERED', 'CANCELLED', 'FAILED', 'SKIPPED')
     AND o.deliveryAttempts < 3
     AND r.date < :today
-    AND r.status != 'CANCELLED'
+    AND r.status NOT IN ('CLOSED', 'COMPLETED')
     AND NOT EXISTS (
         SELECT 1 FROM StopEntity s2
         JOIN s2.route r2
         WHERE s2.order.id = o.id
-        AND s2.status = 'PENDING'
         AND r2.date >= :today
+        AND r2.status NOT IN ('CLOSED', 'COMPLETED')
     )
     ORDER BY r.date ASC
     """)

@@ -48,4 +48,14 @@ export const ordersApi = {
     const response = await api.patch<ApiResponse<Order>>(`/orders/${id}/receive`)
     return response.data
   },
+
+  getReturnedToWarehouse: async () => {
+    const response = await api.get<ApiResponse<Order[]>>('/orders/returned-to-warehouse')
+    return response.data
+  },
+
+  confirmReturn: async (id: string) => {
+    const response = await api.patch<ApiResponse<Order>>(`/orders/${id}/confirm-return`)
+    return response.data
+  },
 }

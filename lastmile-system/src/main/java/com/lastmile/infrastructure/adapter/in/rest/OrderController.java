@@ -175,4 +175,26 @@ public class OrderController {
 
     }
 
+    @GetMapping("/returned-to-warehouse")
+    @Operation(summary = "Get orders returned to warehouse",
+            description = "Returns all orders that were returned due to early route closure. These need to be re-scanned.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getReturnedToWarehouseOrders() {
+
+        List<OrderDto> orders = orderDomainMapper.toDtoList(
+                manageOrdersUseCase.getReturnedToWarehouseOrders());
+
+        return ResponseEntity.ok(ApiResponse.ok(orderRestMapper.toResponseList(orders)));
+    }
+
+    @PatchMapping("/{id}/confirm-return")
+    @Operation(summary = "Confirm package returned to warehouse",
+            description = "Dispatcher scans/confirms a returned package. Changes status from RETURNED_TO_WAREHOUSE to READY_TO_DISPATCH.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'DISPATCHER')")
+    public ResponseEntity<ApiResponse<OrderResponse>> confirmReturnReceived(@PathVariable UUID id) {
+
+        OrderDto dto = orderDomainMapper.toDto(manageOrdersUseCase.confirmReturnReceived(id));
+        return ResponseEntity.ok(ApiResponse.ok(orderRestMapper.toResponse(dto)));
+    }
+
 }

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Form, Input, Button, Card, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useNavigate } from 'react-router-dom'
@@ -8,8 +9,10 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const { setAuth } = useAuthStore()
   const [messageApi, contextHolder] = message.useMessage()
+  const [loading, setLoading] = useState(false)
 
   const onFinish = async (values: { username: string; password: string }) => {
+    setLoading(true)
     try {
       const response = await authApi.login(values.username, values.password)
       const token = response.data.token
@@ -22,9 +25,13 @@ export default function LoginPage() {
         role: payload.role,
       })
 
+      messageApi.success('Inicio de sesion exitoso')
       navigate('/dashboard')
-    } catch {
-      messageApi.error('Usuario o contraseña incorrectos')
+    } catch (error) {
+      console.error('Login error:', error)
+      messageApi.error('Usuario o contrasena incorrectos')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -51,8 +58,8 @@ export default function LoginPage() {
             <Input.Password prefix={<LockOutlined />} placeholder="Contraseña" size="large" />
           </Form.Item>
           <Form.Item>
-            <Button type="primary" htmlType="submit" block size="large">
-              Iniciar sesión
+            <Button type="primary" htmlType="submit" block size="large" loading={loading}>
+              Iniciar sesion
             </Button>
           </Form.Item>
         </Form>

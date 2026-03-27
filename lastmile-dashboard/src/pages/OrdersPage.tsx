@@ -1,8 +1,9 @@
 import { useEffect, useState, useRef } from 'react'
 import { Table, Tag, Button, Select, DatePicker, Space, Card, Modal, Form, Input, InputNumber, message, Upload } from 'antd'
-import { PlusOutlined, ReloadOutlined, UploadOutlined } from '@ant-design/icons'
+import { PlusOutlined, ReloadOutlined, UploadOutlined, QrcodeOutlined, PrinterOutlined } from '@ant-design/icons'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
+import { QRCodeSVG } from 'qrcode.react'
 import { ordersApi } from '../api/ordersApi'
 import type { Order } from '../types'
 
@@ -10,10 +11,13 @@ const statusColors: Record<string, string> = {
   PENDING: 'gold',
   READY_TO_DISPATCH: 'cyan',
   ASSIGNED: 'blue',
+  PICKED_UP: 'geekblue',
   IN_TRANSIT: 'purple',
   DELIVERED: 'green',
   FAILED: 'red',
-  RETURNED: 'orange',
+  SKIPPED: 'orange',
+  RETURNED_TO_WAREHOUSE: 'volcano',
+  RETURNED: 'magenta',
   CANCELLED: 'default',
 }
 
@@ -21,10 +25,13 @@ const statusLabels: Record<string, string> = {
   PENDING: 'Pendiente',
   READY_TO_DISPATCH: 'Listo para despachar',
   ASSIGNED: 'Asignado',
+  PICKED_UP: 'Recogido',
   IN_TRANSIT: 'En tránsito',
   DELIVERED: 'Entregado',
   FAILED: 'Fallido',
-  RETURNED: 'Devuelto',
+  SKIPPED: 'Omitido (ruta cerrada)',
+  RETURNED_TO_WAREHOUSE: 'Devuelto al almacén',
+  RETURNED: 'Devuelto (3 intentos)',
   CANCELLED: 'Cancelado',
 }
 
@@ -40,6 +47,122 @@ export default function OrdersPage() {
   const [detailModalOpen, setDetailModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
   const [proofPhotoUrls, setProofPhotoUrls] = useState<string[]>([])
+  const [qrModalOpen, setQrModalOpen] = useState(false)
+  const [qrOrder, setQrOrder] = useState<Order | null>(null)
+  const [selectedOrders, setSelectedOrders] = useState<Order[]>([])
+
+  const handlePrintQr = (order: Order) => {
+    setQrOrder(order)
+    setQrModalOpen(true)
+  }
+
+  const handlePrintSelected = () => {
+    if (selectedOrders.length === 0) {
+      messageApi.warning('Selecciona al menos una orden para imprimir')
+      return
+    }
+    // Print multiple QR labels
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    
+    const labelsHtml = selectedOrders.map(order => `
+      <div style="page-break-after: always; padding: 20px; border: 1px dashed #ccc; width: 300px; margin: 0 auto;">
+        <div style="text-align: center; margin-bottom: 10px;">
+          <strong style="font-size: 14px;">LASTMILE DELIVERY</strong>
+        </div>
+        <div style="text-align: center; margin: 15px 0;">
+          <svg id="qr-${order.id}"></svg>
+        </div>
+        <div style="text-align: center; font-family: monospace; font-size: 18px; font-weight: bold; margin: 10px 0;">
+          ${order.trackingCode}
+        </div>
+        <hr style="border: none; border-top: 1px dashed #ccc; margin: 10px 0;" />
+        <div style="font-size: 12px;">
+          <div><strong>Para:</strong> ${order.recipientName}</div>
+          <div><strong>Dir:</strong> ${order.addressText}</div>
+          <div><strong>Tel:</strong> ${order.recipientPhone}</div>
+          <div style="margin-top: 5px;"><strong>Prioridad:</strong> ${order.priority === 'EXPRESS' ? '⚡ EXPRESS' : 'STANDARD'}</div>
+        </div>
+      </div>
+    `).join('')
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Etiquetas QR</title>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+        <style>
+          body { font-family: Arial, sans-serif; }
+          @media print { 
+            body { margin: 0; }
+            div { page-break-inside: avoid; }
+          }
+        </style>
+      </head>
+      <body>
+        ${labelsHtml}
+        <script>
+          ${selectedOrders.map(order => `
+            QRCode.toCanvas(document.createElement('canvas'), '${order.trackingCode}', { width: 150 }, function(err, canvas) {
+              const container = document.getElementById('qr-${order.id}');
+              if (container) container.replaceWith(canvas);
+            });
+          `).join('')}
+          setTimeout(function() { window.print(); }, 500);
+        </script>
+      </body>
+      </html>
+    `)
+    printWindow.document.close()
+  }
+
+  const printSingleLabel = () => {
+    if (!qrOrder) return
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Etiqueta - ${qrOrder.trackingCode}</title>
+        <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+        <style>
+          body { font-family: Arial, sans-serif; display: flex; justify-content: center; padding: 20px; }
+          .label { border: 1px dashed #ccc; padding: 20px; width: 300px; }
+          .header { text-align: center; margin-bottom: 10px; font-weight: bold; }
+          .qr-container { text-align: center; margin: 15px 0; }
+          .tracking { text-align: center; font-family: monospace; font-size: 18px; font-weight: bold; margin: 10px 0; }
+          .divider { border: none; border-top: 1px dashed #ccc; margin: 10px 0; }
+          .info { font-size: 12px; }
+          .info div { margin: 3px 0; }
+        </style>
+      </head>
+      <body>
+        <div class="label">
+          <div class="header">LASTMILE DELIVERY</div>
+          <div class="qr-container"><canvas id="qrcode"></canvas></div>
+          <div class="tracking">${qrOrder.trackingCode}</div>
+          <hr class="divider" />
+          <div class="info">
+            <div><strong>Para:</strong> ${qrOrder.recipientName}</div>
+            <div><strong>Dir:</strong> ${qrOrder.addressText}</div>
+            <div><strong>Tel:</strong> ${qrOrder.recipientPhone}</div>
+            <div style="margin-top: 5px;"><strong>Prioridad:</strong> ${qrOrder.priority === 'EXPRESS' ? '⚡ EXPRESS' : 'STANDARD'}</div>
+            <div><strong>Fecha límite:</strong> ${dayjs(qrOrder.deliveryDeadline).format('DD/MM/YYYY')}</div>
+          </div>
+        </div>
+        <script>
+          QRCode.toCanvas(document.getElementById('qrcode'), '${qrOrder.trackingCode}', { width: 150 }, function() {
+            setTimeout(function() { window.print(); }, 300);
+          });
+        </script>
+      </body>
+      </html>
+    `)
+    printWindow.document.close()
+  }
 
   const fetchOrders = async () => {
     setLoading(true)
@@ -128,6 +251,7 @@ export default function OrdersPage() {
       render: (_, record) => (
         <Space>
           <Button size="small" onClick={() => handleViewOrder(record)}>Ver</Button>
+          <Button size="small" icon={<QrcodeOutlined />} onClick={() => handlePrintQr(record)}>QR</Button>
           {record.status === 'PENDING' && (
             <Button size="small" type="primary" onClick={async () => {
               try {
@@ -139,8 +263,20 @@ export default function OrdersPage() {
               }
             }}>Recibido</Button>
           )}
+          {record.status === 'RETURNED_TO_WAREHOUSE' && (
+            <Button size="small" type="primary" style={{ backgroundColor: '#fa8c16' }} onClick={async () => {
+              try {
+                await ordersApi.confirmReturn(record.id)
+                messageApi.success('Devolución confirmada, paquete listo para re-despacho')
+                fetchOrders()
+              } catch {
+                messageApi.error('No se pudo confirmar la devolución')
+              }
+            }}>Confirmar devolución</Button>
+          )}
           {record.status !== 'DELIVERED' && record.status !== 'CANCELLED'
-            && record.status !== 'RETURNED' && (
+            && record.status !== 'RETURNED' && record.status !== 'RETURNED_TO_WAREHOUSE'
+            && record.status !== 'SKIPPED' && (
               <Button size="small" danger onClick={async () => {
                 try {
                   await ordersApi.cancelOrder(record.id)
@@ -235,6 +371,15 @@ export default function OrdersPage() {
           <Button icon={<ReloadOutlined />} onClick={fetchOrders}>
             Actualizar
           </Button>
+          {selectedOrders.length > 0 && (
+            <Button 
+              type="primary" 
+              icon={<PrinterOutlined />} 
+              onClick={handlePrintSelected}
+            >
+              Imprimir {selectedOrders.length} etiqueta(s)
+            </Button>
+          )}
         </Space>
 
         <Table
@@ -243,6 +388,10 @@ export default function OrdersPage() {
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10 }}
+          rowSelection={{
+            selectedRowKeys: selectedOrders.map(o => o.id),
+            onChange: (_, rows) => setSelectedOrders(rows),
+          }}
         />
       </Card>
 
@@ -320,6 +469,52 @@ export default function OrdersPage() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        title="Etiqueta de paquete"
+        open={qrModalOpen}
+        onCancel={() => setQrModalOpen(false)}
+        footer={[
+          <Button key="cancel" onClick={() => setQrModalOpen(false)}>Cerrar</Button>,
+          <Button key="print" type="primary" icon={<PrinterOutlined />} onClick={printSingleLabel}>
+            Imprimir
+          </Button>
+        ]}
+        width={400}
+      >
+        {qrOrder && (
+          <div style={{ textAlign: 'center', padding: '20px 0' }}>
+            <div style={{ 
+              border: '1px dashed #d9d9d9', 
+              borderRadius: 8, 
+              padding: 20,
+              display: 'inline-block'
+            }}>
+              <div style={{ fontWeight: 'bold', marginBottom: 12 }}>LASTMILE DELIVERY</div>
+              <QRCodeSVG value={qrOrder.trackingCode} size={150} />
+              <div style={{ 
+                fontFamily: 'monospace', 
+                fontSize: 18, 
+                fontWeight: 'bold', 
+                marginTop: 12 
+              }}>
+                {qrOrder.trackingCode}
+              </div>
+              <hr style={{ border: 'none', borderTop: '1px dashed #d9d9d9', margin: '12px 0' }} />
+              <div style={{ textAlign: 'left', fontSize: 12 }}>
+                <div><strong>Para:</strong> {qrOrder.recipientName}</div>
+                <div><strong>Dir:</strong> {qrOrder.addressText}</div>
+                <div><strong>Tel:</strong> {qrOrder.recipientPhone}</div>
+                <div style={{ marginTop: 8 }}>
+                  <Tag color={qrOrder.priority === 'EXPRESS' ? 'red' : 'blue'}>
+                    {qrOrder.priority === 'EXPRESS' ? '⚡ EXPRESS' : 'STANDARD'}
+                  </Tag>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </Modal>
