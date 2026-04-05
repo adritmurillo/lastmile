@@ -44,7 +44,7 @@ public class GetStatsUseCaseImpl implements GetStatsUseCase {
                 : 0.0;
 
         List<com.lastmile.domain.model.Route> activeRoutes = todayRoutes.stream()
-                .filter(r -> r.getStatus() != RouteStatus.CANCELLED)
+                .filter(r -> r.getStatus() != RouteStatus.CLOSED)
                 .toList();
 
         long pendingRoutes    = activeRoutes.stream().filter(r -> r.getStatus() == RouteStatus.PENDING).count();

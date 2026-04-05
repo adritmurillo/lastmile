@@ -158,6 +158,7 @@ export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void, on
     PENDING: { color: '#ff9500', label: 'Pendiente', bg: '#fff3e0' },
     DELIVERED: { color: '#34c759', label: 'Entregado', bg: '#e8f8ed' },
     FAILED: { color: '#ff3b30', label: 'Fallido', bg: '#ffeeed' },
+    SKIPPED: { color: '#8e8e93', label: 'Omitido', bg: '#f2f2f7' },
   }
 
   const pendingCount = route?.stops.filter(s => s.status === 'PENDING').length ?? 0
@@ -166,7 +167,7 @@ export function useRoute(onSelectStop: (stop: Stop, routeId: string) => void, on
   const greeting = user?.username ?? ''
   const dateLabel = dayjs().format('dddd D [de] MMMM')
   const routeStarted = route?.status === 'IN_PROGRESS'
-  const routeCompleted = route?.status === 'COMPLETED'
+  const routeCompleted = route?.status === 'COMPLETED' || route?.status === 'CLOSED'
 
 
   return {

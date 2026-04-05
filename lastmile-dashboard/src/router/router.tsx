@@ -5,6 +5,7 @@ import OrdersPage from '../pages/OrdersPage'
 import DispatchPage from '../pages/DispatchPage'
 import CouriersPage from '../pages/CouriersPage'
 import RoutesPage from '../pages/RoutesPage'
+import RouteCloseRequestsPage from '../pages/RouteCloseRequestsPage'
 import MainLayout from '../components/MainLayout'
 import ProtectedRoute from './ProtectedRoute'
 
@@ -27,6 +28,7 @@ export const router = createBrowserRouter([
       { path: 'dispatch', element: <DispatchPage /> },
       { path: 'couriers', element: <CouriersPage /> },
       { path: 'routes', element: <RoutesPage /> },
+      { path: 'close-requests', element: <RouteCloseRequestsPage /> },
     ],
   },
   {

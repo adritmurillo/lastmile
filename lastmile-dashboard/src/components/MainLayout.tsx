@@ -1,4 +1,4 @@
-import { Layout, Menu, Button, Avatar, Dropdown } from 'antd'
+import { Layout, Menu, Button, Avatar, Dropdown, Badge, Tag } from 'antd'
 import {
   DashboardOutlined,
   ShoppingOutlined,
@@ -7,9 +7,14 @@ import {
   NodeIndexOutlined,
   LogoutOutlined,
   UserOutlined,
+  ExclamationCircleOutlined,
+  WifiOutlined,
 } from '@ant-design/icons'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
+import { useEffect, useState, useCallback } from 'react'
+import { routeCloseRequestsApi } from '../api/routeCloseRequestsApi'
+import { useWebSocket } from '../hooks/useWebSocket'
 
 const { Header, Sider, Content } = Layout
 
@@ -17,6 +22,32 @@ export default function MainLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user, logout } = useAuthStore()
+  const [pendingCount, setPendingCount] = useState(0)
+
+  // Fetch pending close requests count
+  const fetchPendingCount = useCallback(async () => {
+    try {
+      const res = await routeCloseRequestsApi.getPendingRequests()
+      setPendingCount(res.data.length)
+    } catch {
+      // Silently fail - not critical
+    }
+  }, [])
+
+  // WebSocket connection
+  const { connected } = useWebSocket({
+    onRouteCloseRequested: () => {
+      // Refresh pending count when a new close request arrives
+      fetchPendingCount()
+    },
+  })
+
+  useEffect(() => {
+    fetchPendingCount()
+    // Refresh every 30 seconds as backup (WebSocket is primary)
+    const interval = setInterval(fetchPendingCount, 30000)
+    return () => clearInterval(interval)
+  }, [fetchPendingCount])
 
   const menuItems = [
     { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
@@ -24,6 +55,18 @@ export default function MainLayout() {
     { key: '/dispatch', icon: <NodeIndexOutlined />, label: 'Despacho' },
     { key: '/routes', icon: <CarOutlined />, label: 'Rutas' },
     { key: '/couriers', icon: <TeamOutlined />, label: 'Couriers' },
+    { 
+      key: '/close-requests', 
+      icon: <ExclamationCircleOutlined />, 
+      label: (
+        <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+          Cierres
+          {pendingCount > 0 && (
+            <Badge count={pendingCount} size="small" style={{ marginLeft: 8 }} />
+          )}
+        </span>
+      ),
+    },
   ]
 
   const handleLogout = () => {
@@ -73,8 +116,18 @@ export default function MainLayout() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-end',
+          gap: 16,
           borderBottom: '1px solid #f0f0f0'
         }}>
+          {/* WebSocket connection indicator */}
+          <Tag 
+            icon={<WifiOutlined />} 
+            color={connected ? 'success' : 'default'}
+            style={{ margin: 0 }}
+          >
+            {connected ? 'En vivo' : 'Desconectado'}
+          </Tag>
+          
           <Dropdown menu={dropdownItems} placement="bottomRight">
             <Button type="text" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Avatar icon={<UserOutlined />} size="small" />

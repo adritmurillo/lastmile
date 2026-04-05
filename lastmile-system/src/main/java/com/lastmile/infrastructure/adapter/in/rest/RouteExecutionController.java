@@ -1,13 +1,19 @@
 package com.lastmile.infrastructure.adapter.in.rest;
 
+import com.lastmile.application.usecase.dto.OrderDto;
 import com.lastmile.application.usecase.dto.RouteDto;
 import com.lastmile.application.usecase.dto.StopDto;
 import com.lastmile.domain.port.in.ExecuteRouteUseCase;
 import com.lastmile.infrastructure.adapter.in.rest.dto.request.RegisterDeliveryRequest;
 import com.lastmile.infrastructure.adapter.in.rest.dto.request.RegisterFailureRequest;
+import com.lastmile.infrastructure.adapter.in.rest.dto.request.ScanPickupRequest;
 import com.lastmile.infrastructure.adapter.in.rest.dto.response.ApiResponse;
+import com.lastmile.infrastructure.adapter.in.rest.dto.response.OrderResponse;
+import com.lastmile.infrastructure.adapter.in.rest.dto.response.PickupStatusResponse;
 import com.lastmile.infrastructure.adapter.in.rest.dto.response.RouteResponse;
 import com.lastmile.infrastructure.adapter.in.rest.dto.response.StopResponse;
+import com.lastmile.infrastructure.adapter.in.rest.mapper.OrderDomainMapper;
+import com.lastmile.infrastructure.adapter.in.rest.mapper.OrderRestMapper;
 import com.lastmile.infrastructure.adapter.in.rest.mapper.RouteDomainMapper;
 import com.lastmile.infrastructure.adapter.in.rest.mapper.RouteRestMapper;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,6 +40,8 @@ public class RouteExecutionController {
     private final ExecuteRouteUseCase executeRouteUseCase;
     private final RouteDomainMapper routeDomainMapper;
     private final RouteRestMapper routeRestMapper;
+    private final OrderDomainMapper orderDomainMapper;
+    private final OrderRestMapper orderRestMapper;
 
     @GetMapping("/my-route")
     @Operation(summary = "Get courier's route for today",
@@ -66,9 +74,40 @@ public class RouteExecutionController {
         return ResponseEntity.ok(ApiResponse.ok(routes));
     }
 
+    @PostMapping("/{routeId}/pickup-scan")
+    @Operation(summary = "Scan package for pickup",
+            description = "Courier scans QR code to confirm package pickup. Changes order status to PICKED_UP.")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
+    public ResponseEntity<ApiResponse<OrderResponse>> scanPickup(
+            @PathVariable UUID routeId,
+            @Valid @RequestBody ScanPickupRequest request) {
+
+        OrderDto order = orderDomainMapper.toDto(
+                executeRouteUseCase.scanPickup(routeId, request.getTrackingCode()));
+
+        return ResponseEntity.ok(ApiResponse.ok(orderRestMapper.toResponse(order)));
+    }
+
+    @GetMapping("/{routeId}/pickup-status")
+    @Operation(summary = "Get pickup status",
+            description = "Returns how many packages have been scanned for pickup")
+    @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
+    public ResponseEntity<ApiResponse<PickupStatusResponse>> getPickupStatus(
+            @PathVariable UUID routeId) {
+
+        var status = executeRouteUseCase.getPickupStatus(routeId);
+
+        return ResponseEntity.ok(ApiResponse.ok(new PickupStatusResponse(
+                status.totalPackages(),
+                status.scannedPackages(),
+                status.pendingPackages(),
+                status.readyToStart()
+        )));
+    }
+
     @PostMapping("/{routeId}/start")
     @Operation(summary = "Start route",
-            description = "Courier confirms they left the warehouse. Route changes to IN_PROGRESS.")
+            description = "Courier confirms they left the warehouse. All packages must be scanned first (PICKED_UP).")
     @PreAuthorize("hasAnyRole('ADMIN', 'COURIER')")
     public ResponseEntity<ApiResponse<RouteResponse>> startRoute(@PathVariable UUID routeId) {
 

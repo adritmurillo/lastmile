@@ -83,10 +83,29 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("Access denied: insufficient permissions"));
     }
 
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalState(IllegalStateException ex) {
+        log.warn("Business rule violation (IllegalStateException): {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
+    @ExceptionHandler(org.springframework.dao.DataIntegrityViolationException.class)
+    public ResponseEntity<ApiResponse<Void>> handleDataIntegrity(
+            org.springframework.dao.DataIntegrityViolationException ex) {
+        log.warn("Data integrity violation: {}", ex.getMessage());
+        String message = "Duplicate or invalid data";
+        if (ex.getMessage() != null && ex.getMessage().contains("external_tracking_code")) {
+            message = "Ya existe un pedido con ese código de tracking externo";
+        }
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ApiResponse.error(message));
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<ApiResponse<Void>> handleRuntimeException(RuntimeException ex) {
-        if (ex.getMessage().equals("Invalid credentials") ||
-                ex.getMessage().equals("User account is inactive")) {
+        if (ex.getMessage() != null && (ex.getMessage().equals("Invalid credentials") ||
+                ex.getMessage().equals("User account is inactive"))) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(ApiResponse.error(ex.getMessage()));
         }

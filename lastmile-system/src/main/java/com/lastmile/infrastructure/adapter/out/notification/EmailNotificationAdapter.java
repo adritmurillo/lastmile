@@ -1,6 +1,7 @@
 package com.lastmile.infrastructure.adapter.out.notification;
 
 import com.lastmile.domain.model.Order;
+import com.lastmile.domain.model.Route;
 import com.lastmile.domain.model.Stop;
 import com.lastmile.domain.port.out.NotificationPort;
 import com.lastmile.infrastructure.adapter.out.notification.template.OrderCreatedEmailTemplate;
@@ -63,6 +64,16 @@ public class EmailNotificationAdapter implements NotificationPort {
     @Override
     public void notifyOrderFailed(Order order, Stop stop) {
         sendHtml(order, orderFailedTemplate.subject(order), orderFailedTemplate.build(order, stop), null, null);
+    }
+
+    @Override
+    public void notifyRouteClosed(Route route, int skippedStops) {
+        // Route closure notifications are handled via WebSocket to the dashboard
+        // No email notification needed for route closures
+        log.info("Route {} closed with {} skipped stops (courier: {})", 
+                route.getId(), 
+                skippedStops,
+                route.getCourier() != null ? route.getCourier().getFullName() : "N/A");
     }
 
     private void sendHtml(Order order, String subject, String html, byte[] attachment, String attachmentName) {

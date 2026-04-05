@@ -22,4 +22,10 @@ public interface RouteRepository {
     void saveStopPhotos(UUID stopId, List<String> photoUrls);
     List<String> getStopPhotos(UUID stopId);
     List<Route> findCompletedByCourier(UUID courierId);
+    
+    /**
+     * Finds all routes that are in CONFIRMED or IN_PROGRESS status.
+     * Used by the auto-close job to find routes that need to be closed.
+     */
+    List<Route> findIncompleteRoutes();
 }

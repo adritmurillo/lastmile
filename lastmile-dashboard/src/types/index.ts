@@ -28,7 +28,7 @@ export interface Order {
   weightKg: number
   volumeCm3: number
   priority: 'STANDARD' | 'EXPRESS'
-  status: 'PENDING' | 'ASSIGNED' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED' | 'CANCELLED' | 'RETURNED' | 'READY_TO_DISPATCH'
+  status: 'PENDING' | 'READY_TO_DISPATCH' | 'ASSIGNED' | 'PICKED_UP' | 'IN_TRANSIT' | 'DELIVERED' | 'FAILED' | 'SKIPPED' | 'RETURNED_TO_WAREHOUSE' | 'RETURNED' | 'CANCELLED'
   deliveryAttempts: number
   deliveryDeadline: string
   createdAt: string
@@ -74,7 +74,7 @@ export interface Route {
   id: string
   courier: Courier
   date: string
-  status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED'
+  status: 'PENDING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CLOSED'
   stops: Stop[]
   totalStops: number
   deliveredCount: number
@@ -87,6 +87,62 @@ export interface Stop {
   id: string
   order: Order
   stopOrder: number
-  status: 'PENDING' | 'DELIVERED' | 'FAILED'
+  status: 'PENDING' | 'DELIVERED' | 'FAILED' | 'SKIPPED'
   proofPhotoUrl?: string
+}
+
+export type RouteCloseReason = 
+  | 'END_OF_SHIFT' 
+  | 'VEHICLE_BREAKDOWN' 
+  | 'COURIER_ILLNESS' 
+  | 'WEATHER_CONDITIONS' 
+  | 'SECURITY_ISSUE' 
+  | 'OTHER'
+
+export type CloseRequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED'
+
+export interface RouteCloseRequest {
+  id: string
+  routeId: string
+  routeCode: string
+  courierId: string
+  courierName: string
+  reason: RouteCloseReason
+  message: string
+  photoUrl?: string
+  status: CloseRequestStatus
+  reviewedBy?: string
+  reviewedAt?: string
+  createdAt: string
+  pendingStopsCount: number
+}
+
+export const ROUTE_CLOSE_REASON_LABELS: Record<RouteCloseReason, string> = {
+  END_OF_SHIFT: 'Fin de turno',
+  VEHICLE_BREAKDOWN: 'Avería del vehículo',
+  COURIER_ILLNESS: 'Enfermedad del courier',
+  WEATHER_CONDITIONS: 'Condiciones climáticas',
+  SECURITY_ISSUE: 'Problema de seguridad',
+  OTHER: 'Otro'
+}
+
+// WebSocket Notification Types
+export type NotificationType = 
+  | 'ROUTE_CLOSE_REQUESTED'
+  | 'ROUTE_CLOSE_APPROVED'
+  | 'ROUTE_CLOSE_REJECTED'
+  | 'NEW_ORDER_CREATED'
+  | 'ORDER_DELIVERED'
+  | 'ORDER_FAILED'
+  | 'ROUTE_STARTED'
+  | 'ROUTE_COMPLETED'
+  | 'COURIER_ARRIVED_AT_STOP'
+  | 'SYSTEM_ALERT'
+
+export interface NotificationMessage {
+  type: NotificationType
+  title: string
+  body: string
+  data: Record<string, unknown>
+  timestamp: string
 }

@@ -3,7 +3,11 @@ import { useRef, useState } from 'react'
 import { ActivityIndicator, Animated, Dimensions, StyleSheet, View } from 'react-native'
 import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler'
 import { AuthProvider, useAuth } from './src/context/AuthContext'
+import { NotificationProvider } from './src/context/NotificationContext'
+import { ThemeProvider, useTheme } from './src/context/ThemeContext'
+import HistoryScreen from './src/screens/HistoryScreen'
 import LoginScreen from './src/screens/LoginScreen'
+import PickupScreen from './src/screens/PickupScreen'
 import ProfileScreen from './src/screens/ProfileScreen'
 import RouteScreen from './src/screens/RouteScreen'
 import StopDetailScreen from './src/screens/StopDetailScreen'
@@ -12,20 +16,15 @@ import type { Stop } from './src/types'
 
 const { width } = Dimensions.get('window')
 
-const styles = StyleSheet.create({
-  root: { flex: 1 },
-  container: { flex: 1, overflow: 'hidden', backgroundColor: '#f2f2f7' },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f2f2f7' },
-  screen: { ...StyleSheet.absoluteFillObject, backgroundColor: '#f2f2f7' },
-})
-
-type Screen = 'route' | 'stopDetail' | 'profile'
+type Screen = 'route' | 'stopDetail' | 'profile' | 'history' | 'pickup'
 
 function AppNavigator() {
   const { user, loading } = useAuth()
+  const { colors } = useTheme()
   const [screen, setScreen] = useState<Screen>('route')
   const [selectedStop, setSelectedStop] = useState<Stop | null>(null)
   const [selectedRouteId, setSelectedRouteId] = useState<string>('')
+  const [routeKey, setRouteKey] = useState(0) // Force refresh RouteScreen
   
   // posición del detail screen: 0 = visible, width = fuera a la derecha
   const detailX = useRef(new Animated.Value(width)).current
@@ -53,7 +52,7 @@ function AppNavigator() {
     ]).start()
   }
 
-  const navigateBack = (velocity = 0) => {
+  const navigateBack = (velocity = 0, shouldRefresh = false) => {
     Animated.parallel([
       Animated.spring(detailX, {
         toValue: width,
@@ -71,6 +70,9 @@ function AppNavigator() {
     ]).start(() => {
       setScreen('route')
       gestureX.setValue(0)
+      if (shouldRefresh) {
+        setRouteKey(k => k + 1) // Trigger RouteScreen remount
+      }
     })
   }
 
@@ -130,8 +132,8 @@ function AppNavigator() {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007aff" />
+      <View style={[styles.center, { backgroundColor: colors.background }]}>
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     )
   }
@@ -139,23 +141,26 @@ function AppNavigator() {
   if (!user) return <LoginScreen />
 
   return (
-    <View style={[styles.container, { backgroundColor: '#f2f2f7' }]}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <Animated.View
         style={[
           styles.screen,
           {
             transform: [{ translateX: routeTranslate }],
-            backgroundColor: '#f2f2f7',
+            backgroundColor: colors.background,
           },
         ]}
       >
         <RouteScreen
+          key={routeKey}
           onSelectStop={(stop, routeId) => {
             setSelectedStop(stop)
             setSelectedRouteId(routeId)
             navigateTo('stopDetail')
           }}
           onProfile={()=> navigateTo('profile')}
+          onHistory={() => navigateTo('history')}
+          onPickup={() => navigateTo('pickup')}
         />
       </Animated.View>
 
@@ -168,13 +173,13 @@ function AppNavigator() {
           enabled={screen === 'stopDetail'}
         >
           <Animated.View
-            style={[styles.screen, { transform: [{ translateX: detailTranslate }] }]}
+            style={[styles.screen, { transform: [{ translateX: detailTranslate }], backgroundColor: colors.background }]}
           >
             <StopDetailScreen
               stop={selectedStop}
               routeId={selectedRouteId}
               onBack={() => navigateBack()}
-              onComplete={() => navigateBack()}
+              onComplete={() => navigateBack(0, true)}
             />
           </Animated.View>
         </PanGestureHandler>
@@ -189,9 +194,41 @@ function AppNavigator() {
           enabled={screen === 'profile'}
         >
           <Animated.View
-            style={[styles.screen, { transform: [{ translateX: detailTranslate }] }]}
+            style={[styles.screen, { transform: [{ translateX: detailTranslate }], backgroundColor: colors.background }]}
           >
             <ProfileScreen onBack={() => navigateBack()} />
+          </Animated.View>
+        </PanGestureHandler>
+      )}
+
+      {screen === 'history' && (
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+          activeOffsetX={10}
+          failOffsetY={[-20, 20]}
+          enabled={screen === 'history'}
+        >
+          <Animated.View
+            style={[styles.screen, { transform: [{ translateX: detailTranslate }], backgroundColor: colors.background }]}
+          >
+            <HistoryScreen onBack={() => navigateBack()} />
+          </Animated.View>
+        </PanGestureHandler>
+      )}
+
+      {screen === 'pickup' && (
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+          activeOffsetX={10}
+          failOffsetY={[-20, 20]}
+          enabled={screen === 'pickup'}
+        >
+          <Animated.View
+            style={[styles.screen, { transform: [{ translateX: detailTranslate }], backgroundColor: colors.background }]}
+          >
+            <PickupScreen onBack={() => navigateBack()} onStartRoute={() => navigateBack(0, true)} />
           </Animated.View>
         </PanGestureHandler>
       )}
@@ -202,11 +239,21 @@ function AppNavigator() {
 function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <AppNavigator />
-      </AuthProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <AppNavigator />
+          </NotificationProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </GestureHandlerRootView>
   )
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1, overflow: 'hidden' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  screen: { ...StyleSheet.absoluteFillObject },
+})
 
 export default registerRootComponent(App)
